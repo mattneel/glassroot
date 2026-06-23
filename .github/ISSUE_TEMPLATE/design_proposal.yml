@@ -1,0 +1,69 @@
+name: Design proposal
+description: Propose a Glassroot design change framed around a user need or threat.
+title: "design: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please frame proposals around the user need or security threat being addressed, not only a preferred implementation.
+
+        Large architectural changes, serialized schema changes, or trust-boundary changes may require an ADR under `docs/adr/`.
+  - type: textarea
+    id: need
+    attributes:
+      label: User or security need
+      description: What problem, threat, or maintainer need should this address?
+    validations:
+      required: true
+  - type: textarea
+    id: proposed-behavior
+    attributes:
+      label: Proposed behavior
+      description: Describe the externally visible behavior or documentation outcome.
+    validations:
+      required: true
+  - type: textarea
+    id: narrow-scope
+    attributes:
+      label: Narrow initial scope
+      description: What is the smallest useful first slice?
+    validations:
+      required: true
+  - type: textarea
+    id: trust-boundaries
+    attributes:
+      label: Affected trust boundaries
+      description: Identify affected runner, materialization, evidence, policy, publisher, workflow, dependency, or credential boundaries.
+    validations:
+      required: true
+  - type: textarea
+    id: invariants
+    attributes:
+      label: Relevant security invariants
+      description: List relevant invariant numbers from KICKSTART.md or explain why none apply.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Include simpler, narrower, or more conservative alternatives.
+    validations:
+      required: true
+  - type: textarea
+    id: compatibility
+    attributes:
+      label: Compatibility or serialized-schema effects
+      description: Note compatibility impact, schema changes, migrations, or why none are expected.
+    validations:
+      required: true
+  - type: dropdown
+    id: contribution
+    attributes:
+      label: Willingness to contribute
+      options:
+        - I can open a pull request for this proposal.
+        - I can help test or review this proposal.
+        - I am only proposing the idea for now.
+    validations:
+      required: true

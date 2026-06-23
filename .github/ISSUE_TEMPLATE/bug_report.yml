@@ -1,0 +1,72 @@
+name: Bug report
+description: Report an ordinary Glassroot bug. Do not use this form for security vulnerabilities.
+title: "bug: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Glassroot is pre-alpha and is not yet safe for hostile or untrusted workloads.
+
+        Do not report security vulnerabilities publicly. If this might be a vulnerability, use the private reporting path in the security policy instead: https://github.com/mattneel/glassroot/security/policy
+
+        Remove credentials, tokens, private source, proprietary logs, and other secrets before submitting.
+  - type: checkboxes
+    id: security-confirmation
+    attributes:
+      label: Security confirmation
+      options:
+        - label: I confirm this report is not a security vulnerability and does not include exploit details or secrets.
+          required: true
+  - type: textarea
+    id: version
+    attributes:
+      label: Glassroot version output
+      description: Paste the output of `glassroot version` or `go run ./cmd/glassroot version`.
+      render: text
+    validations:
+      required: true
+  - type: input
+    id: os-arch
+    attributes:
+      label: Operating system and architecture
+      description: Include operating system version and CPU architecture.
+    validations:
+      required: true
+  - type: textarea
+    id: command
+    attributes:
+      label: Command invoked
+      description: Provide the exact command, with sensitive paths or values redacted.
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal reproduction
+      description: Describe the smallest safe reproduction. Do not attach private source or secrets.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Sanitized logs
+      description: Remove credentials, tokens, private source, internal hostnames, and other secrets before pasting logs.
+      render: text
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional context
+      description: Add any other non-sensitive context that may help maintainers reproduce or understand the bug.

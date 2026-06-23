@@ -903,6 +903,18 @@ Acceptance criteria:
 - add ADR template;
 - add CODEOWNERS for security-sensitive directories.
 
+### GR-2A: Repository automation and issue intake
+
+Acceptance criteria:
+
+- least-privilege pull-request CI runs formatting, vetting, unit tests, race tests, vulnerability scanning, and Linux cross-builds;
+- external Actions are pinned to full commit SHAs;
+- CI uses no secrets or write permissions and does not use `pull_request_target`;
+- Dependabot maintains Go modules and GitHub Actions;
+- public bug and design-proposal forms exist;
+- security reports are directed away from public issues;
+- no target repository execution path is introduced.
+
 ### GR-3: Core model and schema versioning
 
 Acceptance criteria:
