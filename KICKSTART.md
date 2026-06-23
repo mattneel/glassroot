@@ -1217,15 +1217,65 @@ Implementation is present. Runtime validation remains pending until the gated
 live fixture runs with the pinned `runsc`, dedicated Docker runtime, private
 monitor socket, and immutable local fixture image. M4 remains incomplete.
 
-### GR-15: GitHub App design spike
+### GR-15: GitHub App advisory-check design spike
 
 Acceptance criteria:
 
-- document permissions and webhook subscriptions;
-- specify receiver/controller/worker/publisher separation;
-- define idempotency and replay handling;
-- define mapping from report dispositions to advisory Check Run conclusions;
-- no production deployment required.
+- defines the exact advisory GitHub App permission inventory and webhook/action matrix;
+- specifies receiver, credential-broker, controller, source-ingester, worker, and publisher separation;
+- implements pure raw-body signature, bounded header, bounded JSON, projection, replay, identity, and state-machine contracts;
+- defines durable at-least-once replay/idempotency behavior without claiming exactly-once delivery;
+- defines immutable target, job, attempt, supersession, stale-result, and rerequest behavior;
+- preserves credential isolation, including no GitHub credential in worker assignments;
+- maps every policy disposition to advisory neutral Check Run conclusions in v1;
+- adds protocol documentation and ADR 0021;
+- deploys no webhook, mints no token, calls no GitHub API, fetches no source, publishes no Check Run, and authorizes no public execution.
+
+GR-15 is a design spike and pure contract implementation only. M3 real-Docker
+runtime validation and GR-14/M4 runtime validation remain pending. Public PR
+execution remains ineligible until a hardened runner and worker boundary are
+implemented, runtime-validated, and independently reviewed.
+
+### GR-15A: Webhook receiver and durable inbox
+
+Acceptance criteria:
+
+- adds bounded HTTP intake;
+- verifies raw-body HMAC signatures;
+- persists a durable inbox/outbox;
+- handles replay and delivery conflicts;
+- has no GitHub API credentials;
+- performs no source fetch or execution.
+
+### GR-15B: Controller, credential broker, and source ingestion
+
+Acceptance criteria:
+
+- revalidates exact PR state through authenticated GitHub API reads;
+- mints repository-scoped read tokens through a broker;
+- imports source into a control-plane bare Git store;
+- constructs immutable targets and plans;
+- ensures no credential reaches workers.
+
+### GR-15C: Hardened worker protocol
+
+Acceptance criteria:
+
+- accepts authorized immutable jobs only;
+- requires hardened-runner eligibility;
+- writes evidence through reviewed storage;
+- receives no GitHub credentials;
+- cannot publish to GitHub.
+
+### GR-15D: Advisory Check Run publisher
+
+Acceptance criteria:
+
+- uses a Checks-only downscoped token;
+- consumes a validated report projection;
+- creates or updates Check Runs idempotently;
+- uses neutral advisory conclusions;
+- has no source, worker-host, evidence-bundle, log, or artifact access.
 
 ---
 

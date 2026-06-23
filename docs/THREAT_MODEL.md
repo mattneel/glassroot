@@ -561,3 +561,45 @@ configuration, or control plane can produce misleading results or escape the
 spike assumptions. A successful controlled fixture run does not prove hardened
 isolation, image safety, host safety, provenance, authentication, attestation, or
 public-repository eligibility.
+
+## GitHub App advisory boundary (GR-15)
+
+GR-15 defines a future GitHub App advisory-check boundary without deploying a
+webhook receiver, minting credentials, calling GitHub APIs, fetching source,
+scheduling workers, publishing Check Runs, or authorizing public PR execution.
+Webhook origin is verified through a shared secret over the exact raw body, but
+payload repository content remains hostile. Delivery IDs are replay keys, not
+authentication by themselves. Deliveries may be duplicated, delayed, missing, or
+out of order; all handlers must assume at-least-once processing and idempotent
+durable transitions.
+
+Webhook payloads are triggers and hints, not immutable source authority. The
+controller must revalidate current PR state through authenticated GitHub API
+reads using installation identity, repository numeric ID, PR number, and exact
+base/head commit IDs. PR titles, bodies, branch names, comments, labels, sender
+identity, clone URLs, and archive URLs cannot select policy, runner,
+configuration, execution behavior, or source acquisition.
+
+The GitHub platform, installation identity, and current PR metadata returned by
+GitHub APIs are trusted platform inputs for future controller decisions. The
+receiver has no App private key. A credential broker is highly trusted and is the
+only component that may hold the App private key or mint installation tokens.
+Source-read tokens and Checks-write tokens are separate, short lived, and scoped
+to the narrowest repository and permissions. Workers receive no GitHub token,
+App key, webhook secret, OAuth token, publisher credential, clone URL, or API URL
+and cannot publish to GitHub.
+
+The publisher cannot access worker hosts, sandboxes, source stores, evidence
+bundles, logs, artifact bytes, or source credentials. It receives only a
+validated bounded Check projection and a Checks-write token. Stale worker results
+and superseded generations cannot update the current advisory Check Run. A
+Check Run conclusion is advisory UI state; v1 maps Glassroot policy outcomes to
+neutral and does not mean safe, authenticated, attested, approved, or mergeable.
+
+A compromised receiver, controller, credential broker, source ingester, worker,
+or publisher can violate its own boundary. A compromised GitHub installation or
+repository administrator can influence trusted-base policy and repository state.
+Public execution remains prohibited until a hardened runner and worker boundary
+are implemented, runtime-validated, and independently reviewed. GR-15 introduces
+no signing, provenance, attestation, authentication, sandbox, safety, webhook
+freshness, or exactly-once delivery claim.

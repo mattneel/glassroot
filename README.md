@@ -95,6 +95,11 @@ trusted fixture. It is not a production runner, adds no `glassroot run gvisor`
 command, and makes no hardened-sandbox claim. See
 [docs/GVISOR_SPIKE.md](docs/GVISOR_SPIKE.md).
 
+GR-15 defines GitHub App advisory-check boundaries and pure protocol contracts.
+It does not deploy a webhook receiver, call GitHub APIs, mint tokens, fetch
+source, publish Check Runs, or authorize public PR execution. See
+[docs/GITHUB_APP_DESIGN.md](docs/GITHUB_APP_DESIGN.md).
+
 ## Development
 
 ```bash
