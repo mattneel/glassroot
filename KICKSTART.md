@@ -1040,7 +1040,8 @@ Acceptance criteria:
 Acceptance criteria:
 
 - compares normalized base/head attempts and repetitions;
-- produces deterministic additions, removals, changes, and coverage deltas;
+- produces deterministic additions, removals, modifications, count, order,
+  stability, and coverage deltas;
 - preserves raw evidence references on both sides;
 - distinguishes behavior change from nondeterminism and incomplete evidence;
 - emits a versioned BehavioralDelta;

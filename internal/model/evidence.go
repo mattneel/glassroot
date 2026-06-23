@@ -45,7 +45,13 @@ type EvidenceEntry struct {
 // EvidenceRef links a finding or delta to evidence content, event IDs, and an
 // optional logical bundle path. The path is data only and is not accessed here.
 type EvidenceRef struct {
-	Digest     Digest   `json:"digest,omitempty"`
-	EventIDs   []string `json:"eventIds"`
-	BundlePath *string  `json:"bundlePath,omitempty"`
+	Digest            Digest       `json:"digest,omitempty"`
+	EventIDs          []string     `json:"eventIds"`
+	BundlePath        *string      `json:"bundlePath,omitempty"`
+	EventStreamDigest Digest       `json:"eventStreamDigest,omitempty"`
+	EventStreamPath   string       `json:"eventStreamPath,omitempty"`
+	EventSequence     uint64       `json:"eventSequence,omitempty"`
+	Revision          RevisionKind `json:"revision,omitempty"`
+	ScenarioID        string       `json:"scenarioId,omitempty"`
+	Repetition        uint32       `json:"repetition,omitempty"`
 }

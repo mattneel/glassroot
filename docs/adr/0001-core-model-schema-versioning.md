@@ -146,3 +146,11 @@ not make a canonical JSON or attestation claim.
 GR-7B adds optional v1alpha1 model fields needed by the runner boundary: `repetition` on `ObservationEvent` for unambiguous repeated scenario attempts, and runner capability facts `executesTargetCode`, `syntheticEvidence`, and `enforcesNetworkDeny`. It also adds the observation source value `synthetic-test-generated` for fake-runner data. Existing fixtures are preserved where absent fields remain observable as zero values; Glassroot-emitted GR-7B events always populate repetition.
 
 The legacy `RunPlan.runner` object remains non-authoritative. Actual backend capabilities are not inserted into the frozen plan after planning, because doing so would mutate the plan and its digest. Future removal or redesign of that legacy field requires a new schema-version decision.
+
+### GR-9B additive behavioral-delta fields
+
+GR-9B keeps the `glassroot.dev/behavioral-delta/v1alpha1` schema-version value and adds optional behavioral-delta fields for deterministic comparison: plan and manifest digests, manifest verification mode, execution/evidence completeness, comparison profile, normalization profile version, scenario comparisons, summary counts, occurrence profiles, comparison basis, typed normalized fact snapshots, side-specific semantic digests, and side-specific evidence references. It also adds generic delta-kind values `added`, `removed`, `modified`, `count-changed`, `order-changed`, `stability-changed`, and `coverage-changed` while preserving the earlier v1alpha1 delta-kind wire values.
+
+GR-9B extends `EvidenceRef` with optional event-stream digest/path, event sequence, revision, scenario ID, and repetition fields so derived deltas can point to verified GR-8B event streams without exposing host paths. These are additive fields only. Existing v1alpha1 compatibility fixtures are preserved; a separate comparator golden fixture records the current GR-9B output.
+
+Behavioral-delta record IDs, typed anchor digests, and delta JSON digests are computed outside the model compatibility fixtures. They are deterministic equality keys for Glassroot comparison output and do not make canonical JSON, authentication, signing, provenance, attestation, or safety claims.

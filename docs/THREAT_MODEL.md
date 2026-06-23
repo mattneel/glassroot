@@ -215,3 +215,33 @@ They are not authentication, signing, attestation, provenance, or proof that
 source behavior is safe. A compromised normalizer may forge, omit, or
 over-normalize facts. GR-9A introduces no comparison, policy decision,
 rendering, signing, target execution, workspace access, or sandbox.
+
+## Behavioral comparison boundary (GR-9B)
+
+Comparison is another trusted transformation. It accepts only GR-9A
+`observe.TraceSet` objects and can create false differences or hide real ones if
+implemented incorrectly. It never reads or reopens evidence bundles, executes
+target content, renders hostile strings, inspects artifact bytes, parses logs,
+or decides policy.
+
+Exact semantic matching is performed before any correlation. Correlation is
+typed and conservative: process, filesystem, network, artifact, scenario,
+warning, and resource facts use documented anchors, and ambiguous anchor groups
+remain explicit instead of being paired arbitrarily. No fuzzy matching,
+regular-expression matching, machine-learning correlation, statistical
+inference, or intent inference occurs.
+
+Incomplete evidence cannot establish absence. A repetition with incomplete,
+not-started, or unknown event coverage is not treated as an observed empty
+attempt. One complete repetition is a single sample rather than proof of
+determinism. Observation sources remain separate; synthetic observations are not
+collapsed with host, sandbox, broker, guest, workload, static-analysis, or model
+sources.
+
+Behavioral deltas preserve raw event-stream references so policy and rendering
+stages can point back to verified evidence. Delta record IDs and delta digests
+provide deterministic equality only. They are not authentication, signing,
+attestation, provenance, authorization, risk scoring, or proof that observations
+are truthful or safe. A compromised comparator may forge, omit, or misclassify
+deltas. GR-9B introduces no findings, severity, confidence, disposition, waiver,
+rendering, signing, target execution, or sandbox.

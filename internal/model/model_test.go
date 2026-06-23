@@ -304,10 +304,53 @@ func TestSchemaVersionAndEnumWireValues(t *testing.T) {
 		{DeltaKindAddedNetworkConnection, "added-network-connection"},
 		{DeltaKindArtifactChanged, "artifact-changed"},
 		{DeltaKindObservationIncomplete, "observation-incomplete"},
+		{DeltaKindAdded, "added"},
+		{DeltaKindRemoved, "removed"},
+		{DeltaKindModified, "modified"},
+		{DeltaKindCountChanged, "count-changed"},
+		{DeltaKindOrderChanged, "order-changed"},
+		{DeltaKindStabilityChanged, "stability-changed"},
+		{DeltaKindCoverageChanged, "coverage-changed"},
 	}
 	for _, tt := range deltaKinds {
 		if tt.got != tt.want {
 			t.Fatalf("delta kind = %q, want %q", tt.got, tt.want)
+		}
+	}
+
+	comparisonBases := []struct{ got, want ComparisonBasis }{
+		{ComparisonBasisCompleteObservation, "complete-observation"},
+		{ComparisonBasisSingleSample, "single-sample"},
+		{ComparisonBasisRepetitionVariable, "repetition-variable"},
+		{ComparisonBasisCoverageLimited, "coverage-limited"},
+		{ComparisonBasisAmbiguousCorrelation, "ambiguous-correlation"},
+	}
+	for _, tt := range comparisonBases {
+		if tt.got != tt.want {
+			t.Fatalf("comparison basis = %q, want %q", tt.got, tt.want)
+		}
+	}
+
+	coverageAssessments := []struct{ got, want CoverageAssessment }{
+		{CoverageAssessmentComplete, "complete"},
+		{CoverageAssessmentPartial, "partial"},
+		{CoverageAssessmentNone, "none"},
+	}
+	for _, tt := range coverageAssessments {
+		if tt.got != tt.want {
+			t.Fatalf("coverage assessment = %q, want %q", tt.got, tt.want)
+		}
+	}
+
+	repeatabilityAssessments := []struct{ got, want RepeatabilityAssessment }{
+		{RepeatabilityStable, "stable"},
+		{RepeatabilityVariable, "variable"},
+		{RepeatabilitySingleSample, "single-sample"},
+		{RepeatabilityNotAssessable, "not-assessable"},
+	}
+	for _, tt := range repeatabilityAssessments {
+		if tt.got != tt.want {
+			t.Fatalf("repeatability assessment = %q, want %q", tt.got, tt.want)
 		}
 	}
 }
