@@ -1,0 +1,21 @@
+# Default owner for all repository changes.
+* @mattneel
+
+# Security-sensitive areas. These are listed explicitly even though the default
+# owner applies, so review routing remains visible as the repository grows.
+/.github/workflows/ @mattneel
+/.glassroot/ @mattneel
+/internal/runner/ @mattneel
+/internal/gitstore/ @mattneel
+/internal/evidence/ @mattneel
+/internal/policy/ @mattneel
+/internal/attest/ @mattneel
+/internal/githubapp/ @mattneel
+/internal/sanitize/ @mattneel
+/runtime/ @mattneel
+/api/ @mattneel
+/policies/ @mattneel
+/SECURITY.md @mattneel
+/docs/THREAT_MODEL.md @mattneel
+/docs/AI_BOUNDARY.md @mattneel
+/docs/adr/ @mattneel
