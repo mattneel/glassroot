@@ -1,0 +1,48 @@
+apiVersion: glassroot.dev/v1alpha1
+kind: Pipeline
+metadata:
+  name: default
+spec:
+  environment:
+    image: docker.io/library/golang:1.26@sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+    workdir: /workspace
+  resources:
+    cpu: 2
+    memory: 2GiB
+    disk: 4GiB
+    processes: 256
+    timeout: 15m
+  network:
+    mode: deny
+    allow: []
+  scenarios:
+    - id: test
+      name: Unit tests
+      shell: /bin/sh
+      run: |
+        echo "literal shell text stays data"
+        go test ./...
+      timeout: 10m
+    - id: build
+      name: Build
+      shell: /bin/bash
+      run: go build ./cmd/glassroot
+      timeout: 5m
+  collect:
+    filesystem:
+      roots:
+        - /workspace
+        - /tmp
+      contents: metadata-and-digests
+    artifacts:
+      - path: /workspace/bin/**
+        maxBytes: 50MiB
+    logs:
+      maxBytesPerStream: 10MiB
+  compare:
+    ignore:
+      - field: event.timestamp
+      - field: process.pid
+    repetitions: 1
+  policy:
+    profile: strict

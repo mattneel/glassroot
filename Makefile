@@ -1,9 +1,13 @@
 GO ?= go
+GOFMT ?= gofmt
 
-.PHONY: fmt vet lint test test-race test-integration build generate verify
+.PHONY: fmt fmt-check vet lint test test-race test-integration schema-check test-fuzz-seeds build generate verify
 
 fmt:
-	$(GO) fmt ./...
+	$(GOFMT) -w .
+
+fmt-check:
+	@test -z "$$($(GOFMT) -l .)" || { echo "gofmt needed:"; $(GOFMT) -l .; exit 1; }
 
 vet:
 	$(GO) vet ./...
@@ -17,13 +21,20 @@ test-race:
 	$(GO) test -race ./...
 
 test-integration:
-	@echo "no integration tests in GR-1"
+	@echo "no integration tests in GR-4"
+
+schema-check:
+	$(GO) test ./internal/config -run 'TestPipelineSchema|TestSchemaDocuments' -count=1
+
+test-fuzz-seeds:
+	$(GO) test ./internal/config -run FuzzParseAndValidate -count=1
 
 build:
-	mkdir -p bin
-	$(GO) build -o bin/glassroot ./cmd/glassroot
+	@tmp="$$(mktemp -t glassroot.XXXXXX)"; \
+	$(GO) build -o "$$tmp" ./cmd/glassroot; \
+	rm -f "$$tmp"
 
 generate:
 	$(GO) generate ./...
 
-verify: fmt vet test build
+verify: fmt-check vet test schema-check build

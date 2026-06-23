@@ -1,0 +1,339 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://glassroot.dev/schemas/v1alpha1/pipeline.schema.json",
+    "title": "Glassroot v1alpha1 Pipeline",
+    "description": "Strict public schema for the v1alpha1 Glassroot pipeline configuration shape. Go validation enforces additional YAML-subset and semantic constraints.",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+        "apiVersion",
+        "kind",
+        "metadata",
+        "spec"
+    ],
+    "properties": {
+        "apiVersion": {
+            "const": "glassroot.dev/v1alpha1"
+        },
+        "kind": {
+            "const": "Pipeline"
+        },
+        "metadata": {
+            "$ref": "#/$defs/metadata"
+        },
+        "spec": {
+            "$ref": "#/$defs/spec"
+        }
+    },
+    "$defs": {
+        "metadata": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "name": {
+                    "$ref": "#/$defs/identifier"
+                }
+            }
+        },
+        "spec": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "environment",
+                "resources",
+                "network",
+                "scenarios",
+                "collect",
+                "compare",
+                "policy"
+            ],
+            "properties": {
+                "environment": {
+                    "$ref": "#/$defs/environment"
+                },
+                "resources": {
+                    "$ref": "#/$defs/resources"
+                },
+                "network": {
+                    "$ref": "#/$defs/network"
+                },
+                "scenarios": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 64,
+                    "items": {
+                        "$ref": "#/$defs/scenario"
+                    }
+                },
+                "collect": {
+                    "$ref": "#/$defs/collect"
+                },
+                "compare": {
+                    "$ref": "#/$defs/compare"
+                },
+                "policy": {
+                    "$ref": "#/$defs/policy"
+                }
+            }
+        },
+        "environment": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "image",
+                "workdir"
+            ],
+            "properties": {
+                "image": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 512,
+                    "pattern": "^[^\\s\u0000-\u001f\u007f]+@sha256:[0-9a-f]{64}$"
+                },
+                "workdir": {
+                    "$ref": "#/$defs/absolutePath"
+                }
+            }
+        },
+        "resources": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "cpu",
+                "memory",
+                "disk",
+                "processes",
+                "timeout"
+            ],
+            "properties": {
+                "cpu": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 64
+                },
+                "memory": {
+                    "$ref": "#/$defs/sizeUnit"
+                },
+                "disk": {
+                    "$ref": "#/$defs/sizeUnit"
+                },
+                "processes": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 65535
+                },
+                "timeout": {
+                    "$ref": "#/$defs/durationUnit"
+                }
+            }
+        },
+        "network": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "mode",
+                "allow"
+            ],
+            "properties": {
+                "mode": {
+                    "const": "deny"
+                },
+                "allow": {
+                    "type": "array",
+                    "maxItems": 0,
+                    "items": false
+                }
+            }
+        },
+        "scenario": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "id",
+                "name",
+                "shell",
+                "run",
+                "timeout"
+            ],
+            "properties": {
+                "id": {
+                    "$ref": "#/$defs/identifier"
+                },
+                "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 256,
+                    "pattern": "^[^\u0000-\u001f\u007f]+$"
+                },
+                "shell": {
+                    "enum": [
+                        "/bin/sh",
+                        "/bin/bash",
+                        "/usr/bin/bash"
+                    ]
+                },
+                "run": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 65536,
+                    "pattern": "^[^\u0000]+$"
+                },
+                "timeout": {
+                    "$ref": "#/$defs/durationUnit"
+                }
+            }
+        },
+        "collect": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "filesystem",
+                "artifacts",
+                "logs"
+            ],
+            "properties": {
+                "filesystem": {
+                    "$ref": "#/$defs/filesystemCollect"
+                },
+                "artifacts": {
+                    "type": "array",
+                    "maxItems": 64,
+                    "items": {
+                        "$ref": "#/$defs/artifact"
+                    }
+                },
+                "logs": {
+                    "$ref": "#/$defs/logs"
+                }
+            }
+        },
+        "filesystemCollect": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "roots",
+                "contents"
+            ],
+            "properties": {
+                "roots": {
+                    "type": "array",
+                    "maxItems": 16,
+                    "uniqueItems": true,
+                    "items": {
+                        "$ref": "#/$defs/absolutePath"
+                    }
+                },
+                "contents": {
+                    "const": "metadata-and-digests"
+                }
+            }
+        },
+        "artifact": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "path",
+                "maxBytes"
+            ],
+            "properties": {
+                "path": {
+                    "$ref": "#/$defs/artifactGlob"
+                },
+                "maxBytes": {
+                    "$ref": "#/$defs/sizeUnit"
+                }
+            }
+        },
+        "logs": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "maxBytesPerStream"
+            ],
+            "properties": {
+                "maxBytesPerStream": {
+                    "$ref": "#/$defs/sizeUnit"
+                }
+            }
+        },
+        "compare": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "ignore",
+                "repetitions"
+            ],
+            "properties": {
+                "ignore": {
+                    "type": "array",
+                    "maxItems": 32,
+                    "uniqueItems": true,
+                    "items": {
+                        "$ref": "#/$defs/ignoreField"
+                    }
+                },
+                "repetitions": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 10
+                }
+            }
+        },
+        "ignoreField": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "field"
+            ],
+            "properties": {
+                "field": {
+                    "enum": [
+                        "event.timestamp",
+                        "process.pid"
+                    ]
+                }
+            }
+        },
+        "policy": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "profile"
+            ],
+            "properties": {
+                "profile": {
+                    "const": "strict"
+                }
+            }
+        },
+        "identifier": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[a-z][a-z0-9._-]{0,63}$"
+        },
+        "absolutePath": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4096,
+            "pattern": "^/[^\\\\\u0000-\u001f\u007f]*$"
+        },
+        "artifactGlob": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4096,
+            "pattern": "^/[^\\\\\u0000-\u001f\u007f]*$"
+        },
+        "sizeUnit": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]*(B|KiB|MiB|GiB|TiB)$"
+        },
+        "durationUnit": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]*(ms|s|m|h)$"
+        }
+    }
+}

@@ -1,0 +1,5 @@
+apiVersion: glassroot.dev/v1alpha1
+kind: Pipeline
+metadata: &meta
+  name: default
+copy: *meta

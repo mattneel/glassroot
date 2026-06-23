@@ -1,0 +1,30 @@
+apiVersion: glassroot.dev/v1alpha1
+kind: Pipeline
+metadata:
+  name: default
+spec:
+  environment:
+    image: docker.io/library/golang:1.26@sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+    workdir: /workspace
+  resources:
+    cpu: 2
+    memory: 2GB
+    disk: 4GiB
+    processes: 256
+    timeout: 15m
+  network:
+    mode: deny
+    allow: []
+  scenarios: []
+  collect:
+    filesystem:
+      roots: [/workspace]
+      contents: metadata-and-digests
+    artifacts: []
+    logs:
+      maxBytesPerStream: 10MiB
+  compare:
+    ignore: []
+    repetitions: 1
+  policy:
+    profile: strict
