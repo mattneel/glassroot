@@ -1,7 +1,7 @@
 GO ?= go
 GOFMT ?= gofmt
 
-.PHONY: fmt fmt-check vet lint test test-race test-integration schema-check test-fuzz-seeds test-gitstore test-gitstore-fuzz-seeds test-materialize test-materialize-fuzz-seeds test-pipeline test-pipeline-fuzz-seeds test-runner test-runner-fuzz-seeds test-evidence test-evidence-fuzz-seeds test-evidence-reader test-evidence-reader-fuzz-seeds test-observe test-observe-fuzz-seeds test-compare test-compare-fuzz-seeds build generate verify
+.PHONY: fmt fmt-check vet lint test test-race test-integration schema-check test-fuzz-seeds test-gitstore test-gitstore-fuzz-seeds test-materialize test-materialize-fuzz-seeds test-pipeline test-pipeline-fuzz-seeds test-runner test-runner-fuzz-seeds test-evidence test-evidence-fuzz-seeds test-evidence-reader test-evidence-reader-fuzz-seeds test-observe test-observe-fuzz-seeds test-compare test-compare-fuzz-seeds test-policy test-policy-fuzz-seeds build generate verify
 
 fmt:
 	$(GOFMT) -w .
@@ -36,6 +36,7 @@ test-fuzz-seeds:
 	$(GO) test ./internal/evidence -run 'FuzzStrictJSONPreflight|FuzzParseEventJSONLine|FuzzReconcileBundleInventory|FuzzValidateArtifactReferences' -count=1
 	$(GO) test ./internal/observe -run 'FuzzNormalizeProcessTrace|FuzzNormalizeObservedPath|FuzzEncodeNormalizedFact' -count=1
 	$(GO) test ./internal/compare -run 'FuzzBuildOccurrenceProfiles|FuzzBuildTypedComparisonAnchor|FuzzEncodeDeltaRecord' -count=1
+	$(GO) test ./internal/policy -run 'FuzzClassifyPolicyConfidence|FuzzEncodeFindingID|FuzzEvaluateDeltaRecord' -count=1
 
 test-gitstore:
 	$(GO) test ./internal/gitstore -count=1
@@ -96,3 +97,9 @@ test-compare:
 
 test-compare-fuzz-seeds:
 	$(GO) test ./internal/compare -run 'FuzzBuildOccurrenceProfiles|FuzzBuildTypedComparisonAnchor|FuzzEncodeDeltaRecord' -count=1
+
+test-policy:
+	$(GO) test ./internal/policy -count=1
+
+test-policy-fuzz-seeds:
+	$(GO) test ./internal/policy -run 'FuzzClassifyPolicyConfidence|FuzzEncodeFindingID|FuzzEvaluateDeltaRecord' -count=1

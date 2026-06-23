@@ -154,3 +154,18 @@ GR-9B keeps the `glassroot.dev/behavioral-delta/v1alpha1` schema-version value a
 GR-9B extends `EvidenceRef` with optional event-stream digest/path, event sequence, revision, scenario ID, and repetition fields so derived deltas can point to verified GR-8B event streams without exposing host paths. These are additive fields only. Existing v1alpha1 compatibility fixtures are preserved; a separate comparator golden fixture records the current GR-9B output.
 
 Behavioral-delta record IDs, typed anchor digests, and delta JSON digests are computed outside the model compatibility fixtures. They are deterministic equality keys for Glassroot comparison output and do not make canonical JSON, authentication, signing, provenance, attestation, or safety claims.
+
+### GR-10A additive finding fields
+
+GR-10A keeps the `glassroot.dev/finding/v1alpha1` schema-version value and adds
+optional finding fields for deterministic built-in policy output: `ruleVersion`
+and `deltaRecordIds`. These fields bind a finding to the exact built-in rule
+version and immutable behavioral-delta records that triggered it without
+embedding raw delta JSON, raw events, logs, artifact bytes, or hostile evidence
+strings.
+
+The additions are optional for v1alpha1 compatibility. Existing model fixtures
+remain valid, while a separate policy-evaluation golden fixture records the
+current GR-10A output. Finding IDs and policy-evaluation digests are deterministic
+equality keys only and do not make canonical JSON, authentication, signing,
+provenance, attestation, or safety claims.

@@ -69,21 +69,23 @@ type DeltaRecord struct {
 
 // Finding is an independently serialized policy-facing finding document.
 type Finding struct {
-	SchemaVersion SchemaVersion `json:"schemaVersion"`
-	ID            string        `json:"id"`
-	RuleID        string        `json:"ruleId"`
-	Title         string        `json:"title"`
-	Severity      Severity      `json:"severity"`
-	Confidence    Confidence    `json:"confidence"`
-	Disposition   Disposition   `json:"disposition"`
-	Summary       string        `json:"summary"`
-	Evidence      []EvidenceRef `json:"evidence"`
-	ScenarioIDs   []string      `json:"scenarioIds"`
-	BaseObserved  bool          `json:"baseObserved"`
-	HeadObserved  bool          `json:"headObserved"`
-	Waived        bool          `json:"waived"`
-	Waivers       []Waiver      `json:"waivers,omitempty"`
-	Limitations   []Limitation  `json:"limitations"`
+	SchemaVersion  SchemaVersion `json:"schemaVersion"`
+	ID             string        `json:"id"`
+	RuleID         string        `json:"ruleId"`
+	RuleVersion    string        `json:"ruleVersion,omitempty"`
+	Title          string        `json:"title"`
+	Severity       Severity      `json:"severity"`
+	Confidence     Confidence    `json:"confidence"`
+	Disposition    Disposition   `json:"disposition"`
+	Summary        string        `json:"summary"`
+	DeltaRecordIDs []string      `json:"deltaRecordIds,omitempty"`
+	Evidence       []EvidenceRef `json:"evidence"`
+	ScenarioIDs    []string      `json:"scenarioIds"`
+	BaseObserved   bool          `json:"baseObserved"`
+	HeadObserved   bool          `json:"headObserved"`
+	Waived         bool          `json:"waived"`
+	Waivers        []Waiver      `json:"waivers,omitempty"`
+	Limitations    []Limitation  `json:"limitations"`
 }
 
 // Waiver records trusted waiver metadata as data. Loading and validation are

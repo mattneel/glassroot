@@ -1047,15 +1047,35 @@ Acceptance criteria:
 - emits a versioned BehavioralDelta;
 - executes nothing.
 
-### GR-10: Built-in policy rules
+### GR-10A: Deterministic built-in policy rules
 
 Acceptance criteria:
 
-- implement first stable rule IDs;
-- severity/confidence/disposition are separate;
-- invalid or expired waivers fail visibly;
-- waivers load only from base;
-- deterministic findings cannot be removed by report formatting.
+- consumes only immutable BehavioralDelta output;
+- implements stable built-in rule IDs and versions;
+- severity, confidence, and disposition remain separate;
+- incomplete and synthetic evidence are explicit;
+- every finding retains delta and raw evidence references;
+- finding IDs and frozen evaluation output are deterministic;
+- repository content cannot define or disable rules;
+- no waivers are applied;
+- executes nothing.
+
+### GR-10B: Trusted-base waivers and policy application
+
+Acceptance criteria:
+
+- loads waivers only from a fixed path in the exact trusted base revision;
+- parses waivers through a bounded strict format;
+- head waiver content is inspected but never applied;
+- evaluation time is an explicit trusted input;
+- invalid, expired, overly broad, unused, added, removed, or changed waivers
+  fail visibly through GR-WAIVER-001;
+- trusted configuration changes produce GR-CONFIG-001 where applicable;
+- waivers annotate findings but never delete them;
+- original rule severity, confidence, evidence, and unwaived disposition remain
+  recoverable;
+- no target content executes.
 
 ### GR-11: Reporters and `inspect`
 

@@ -245,3 +245,35 @@ attestation, provenance, authorization, risk scoring, or proof that observations
 are truthful or safe. A compromised comparator may forge, omit, or misclassify
 deltas. GR-9B introduces no findings, severity, confidence, disposition, waiver,
 rendering, signing, target execution, or sandbox.
+
+## Built-in policy boundary (GR-10A)
+
+Policy evaluation is a trusted transformation over immutable GR-9B
+`compare.FrozenDelta` output. A compromised or incorrect policy engine can create
+false findings, omit meaningful behavior, or misclassify coverage and
+repeatability. GR-10A therefore validates the complete delta and fails closed on
+unknown delta kinds, fact kinds, observation sources, comparison bases, malformed
+typed facts, duplicate identifiers, and limit violations.
+
+Repository content cannot define, disable, reorder, or modify rules, and head
+configuration cannot select policy behavior. Rules use typed normalized behavior
+and occurrence profiles rather than prose, log text, regular expressions,
+substring matching, fuzzy matching, shell parsing, machine learning, or artifact
+content inspection.
+
+Incomplete evidence is not clean evidence. Synthetic evidence remains explicit
+and is not treated as target workload behavior. Severity, confidence, and
+disposition are deterministic policy categories, not probabilities, statistical
+claims, model confidence, waiver state, or malicious-intent judgments.
+
+Findings preserve delta-record IDs and raw evidence references for later safe
+rendering, but findings themselves are derived judgments and do not authenticate
+the writer, runner, comparator, repository, or observations. Finding IDs and
+policy-evaluation digests provide deterministic equality only; they are not
+signatures, provenance, authentication, authorization, or attestations.
+
+GR-10A applies no waivers. Formatting in GR-11 cannot alter the frozen finding
+set. A compromised comparator or policy engine can still produce misleading
+results. GR-10A introduces no rendering, signing, target execution, workspace
+access, evidence-bundle mutation, custom policy language, OPA/Rego/plugin
+support, or sandbox claim.
