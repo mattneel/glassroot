@@ -41,6 +41,15 @@ type VerifiedAttempt struct {
 	AcceptedEventCount uint64
 }
 
+type VerifiedEntryReference struct {
+	Path         string
+	Digest       model.Digest
+	SizeBytes    int64
+	Role         EntryRole
+	CaptureState CaptureState
+	Attempt      AttemptKey
+}
+
 type CopyResult struct {
 	Bytes        int64
 	Digest       model.Digest
@@ -126,6 +135,22 @@ func (b *Bundle) Verification() VerificationSummary {
 	out.Limitations = cloneLimitations(out.Limitations)
 	return out
 }
+func (b *Bundle) EventStreamReference(attempt AttemptKey) (VerifiedEntryReference, error) {
+	if b == nil {
+		return VerifiedEntryReference{}, errCode(CodeInvalidSessionState, "event-reference", "open", "bundle is nil", nil)
+	}
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if err := b.ensureOpen("event-reference"); err != nil {
+		return VerifiedEntryReference{}, err
+	}
+	entry, ok := b.eventsByAttempt[attemptKeyString(attempt)]
+	if !ok {
+		return VerifiedEntryReference{}, errCode(CodeInvalidAttempt, "event-reference", "attempt", "unknown event stream attempt", nil)
+	}
+	return VerifiedEntryReference{Path: entry.Path, Digest: entry.Digest, SizeBytes: entry.SizeBytes, Role: entry.Role, CaptureState: entry.CaptureState, Attempt: attempt}, nil
+}
+
 func (b *Bundle) Close() error {
 	if b == nil {
 		return nil

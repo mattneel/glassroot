@@ -1021,14 +1021,30 @@ Acceptance criteria:
 - corrupt and race-oriented tests fail closed;
 - reading or inspecting a bundle executes nothing.
 
-### GR-9: Comparator and normalizer
+### GR-9A: Typed evidence normalization
 
 Acceptance criteria:
 
-- compare fake base/head event streams;
-- normalize PID, time, and sandbox-root fields;
-- preserve raw evidence references;
-- golden tests cover additions, removals, changes, and incomplete evidence.
+- consumes only verified evidence bundles;
+- normalizes every supported event kind explicitly;
+- converts numeric PIDs into stable source-scoped process identities;
+- normalizes timestamps and trusted sandbox roots without rewriting arbitrary
+  strings;
+- preserves raw event references and observation provenance;
+- represents incomplete evidence explicitly;
+- emits deterministic owned traces and semantic fact digests;
+- executes nothing.
+
+### GR-9B: Behavioral comparator
+
+Acceptance criteria:
+
+- compares normalized base/head attempts and repetitions;
+- produces deterministic additions, removals, changes, and coverage deltas;
+- preserves raw evidence references on both sides;
+- distinguishes behavior change from nondeterminism and incomplete evidence;
+- emits a versioned BehavioralDelta;
+- executes nothing.
 
 ### GR-10: Built-in policy rules
 

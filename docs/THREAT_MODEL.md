@@ -186,3 +186,32 @@ distinguished by device/inode facts, sufficiently privileged concurrent
 mutation, compromised storage, and compromised control-plane code remain outside
 this guarantee. GR-8B does not execute target code, repair bundles, render
 reports, compare behavior, decide policy, sign evidence, or provide a sandbox.
+
+## Evidence normalization boundary (GR-9A)
+
+Normalization is a trusted transformation over verified bundles. It can hide
+behavioral differences if implemented incorrectly, so GR-9A accepts only a
+fully verified `evidence.Bundle`, handles every supported observation kind
+explicitly, and fails closed on unknown kinds, unknown sources, malformed typed
+payloads, or unsupported compare-ignore fields.
+
+Numeric process IDs, process parent IDs, absolute clocks, and sandbox root
+prefixes are treated as nondeterministic evidence coordinates. Process identity
+is rebuilt per attempt and observation source; sources are never collapsed into
+one PID namespace. Timestamps are converted to per-source relative offsets while
+global event sequence remains the ordering authority. Trusted root prefixes are
+normalized only in structured path fields. Arbitrary evidence strings, command
+text, warnings, logs, DNS names, URLs, and artifact bytes are not rewritten.
+Unicode is not normalization-folded.
+
+Raw evidence remains reachable through event-stream digest/path, event ID,
+sequence number, and attempt coordinate. Incomplete evidence, truncated logs,
+omitted artifacts, observer warnings, unsupported observations, synthetic
+evidence, and internal-consistency-only manifest verification remain explicit in
+the normalized trace. A normalized trace is derived data, not raw observation.
+
+Semantic digests provide deterministic equality keys for later comparison only.
+They are not authentication, signing, attestation, provenance, or proof that
+source behavior is safe. A compromised normalizer may forge, omit, or
+over-normalize facts. GR-9A introduces no comparison, policy decision,
+rendering, signing, target execution, workspace access, or sandbox.

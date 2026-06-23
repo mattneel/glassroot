@@ -110,6 +110,22 @@ func isZeroRunnerCapabilities(c model.RunnerCapabilities) bool {
 // ExpandPlanAttempts returns the deterministic attempt inventory for a frozen
 // plan without executing it. The returned requests are owned copies. Evidence
 // writers use this to route events without reconstructing execution semantics.
+
+// ExpandPlanDocument returns the deterministic attempt inventory for an already
+// verified run-plan document. The caller supplies the independently recomputed
+// plan digest; this helper does not construct or trust a FrozenPlan. Returned
+// requests are owned copies.
+func ExpandPlanDocument(doc model.RunPlan, planDigest model.Digest) ([]AttemptRequest, error) {
+	if err := validatePlanDocument(doc); err != nil {
+		return nil, err
+	}
+	attempts, err := expandAttempts(doc, planDigest)
+	if err != nil {
+		return nil, err
+	}
+	return cloneAttemptRequests(attempts), nil
+}
+
 func ExpandPlanAttempts(plan *pipeline.FrozenPlan) ([]AttemptRequest, error) {
 	if plan == nil {
 		return nil, errCode(CodeInvalidPlan, "plan", "", "plan", "FrozenPlan is required", nil)
