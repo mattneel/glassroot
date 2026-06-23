@@ -244,7 +244,8 @@ type ValidatedResources struct {
 }
 
 type ValidatedNetwork struct {
-	Mode string
+	Mode  string
+	Allow []string
 }
 
 type ValidatedScenario struct {

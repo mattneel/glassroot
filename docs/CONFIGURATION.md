@@ -15,7 +15,33 @@ Exit codes:
 - `2`: usage error, missing configuration, parse failure, or validation failure.
 - `3`: unexpected I/O or internal failure.
 
-`validate` reads only the selected file, applies a 1 MiB input bound, and does not recurse, include other files, access the network, construct a runner, or create a run plan. Trusted base/head configuration loading is future GR-5 work.
+`validate` reads only the selected file, applies a 1 MiB input bound, and does not recurse, include other files, access the network, construct a runner, or create a run plan.
+
+## Configuration trust in pull requests
+
+For a pull request from trusted base revision `A` to proposed head revision `B`, Glassroot uses only the base revision's `.glassroot/pipeline.yaml` as the effective pipeline configuration for the current request.
+
+- Base `A` supplies the effective pipeline for both future base and head executions.
+- Head `B` is read from the same fixed path only for change assessment.
+- Head configuration is never merged, selected, or used to fill missing base fields.
+- Formatting-only, comment-only, or key-order-only head changes can be reported as content changes that are semantically equivalent.
+- Semantic head changes are reported with deterministic fields, change kinds, and security-effect classifications.
+- Invalid, unsupported, oversized, removed, or non-regular head configuration is still reported; it does not become effective.
+- Missing, unreadable, unsupported, oversized, syntactically invalid, or semantically invalid base configuration fails closed and prevents later planning.
+- There is no approved-rerun or override mechanism in GR-5.
+- GR-6 will provide exact Git commit resolution and raw Git object loading. GR-5 trusts the abstract revision-file source contract.
+- Validation and trusted loading do not execute, expand, interpolate, or shell-parse `run` strings.
+
+Compact example:
+
+```text
+base:      resources.cpu = 2
+head:      resources.cpu = 64
+effective: resources.cpu = 2
+assessment: privilege-increase proposed in head
+```
+
+Configuration trust prevents the proposed revision from choosing how this request is inspected. It is not isolation by itself and does not make a sandbox security claim.
 
 ## v1alpha1 shape
 

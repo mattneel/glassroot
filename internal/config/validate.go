@@ -123,6 +123,8 @@ func validateNetwork(network Network, out *ValidatedPipeline) Diagnostics {
 		diags = append(diags, newDiagnostic(CodeMissingRequiredField, "spec.network.allow", network.Allow.Line, network.Allow.Column, "network.allow must be an explicit empty array"))
 	} else if network.AllowLen != 0 {
 		diags = append(diags, newDiagnostic(CodeInvalidValue, "spec.network.allow", network.Allow.Line, network.Allow.Column, "network.allow must be empty for deny mode"))
+	} else {
+		out.Network.Allow = []string{}
 	}
 	return diags
 }
