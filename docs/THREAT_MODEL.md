@@ -457,3 +457,40 @@ daemon, or filesystem compromise. Same-UID host mutation, malicious mounts,
 container escape, daemon compromise, and kernel compromise remain outside the
 backend's guarantee. No public webhook or untrusted execution policy may select
 docker-dev.
+
+### GR-13B safe post-run artifact collection
+
+After target execution, the writable workspace is hostile filesystem state. The
+target may choose names, contents, permissions, symlinks, hard links, sockets,
+FIFOs, devices, directories, and mutation traps. Artifact collection starts only
+after the future runner has terminated and reaped the target container by
+contract; GR-13B is not filesystem observation during execution.
+
+The collector binds the workspace before execution by retaining an `os.Root` and
+checks that the root identity remains stable during collection. `os.Root` is a
+traversal-resistant API, not a sandbox. Logical sandbox paths from the trusted
+plan never become host paths, and filesystem-selected relative names are not
+joined to an absolute host path. Artifact patterns come only from the trusted
+effective plan; head configuration cannot alter them for an inspected run.
+
+Collection inventories the complete workspace before reading artifact bytes. It
+validates names and paths, rejects `.git` components, rejects filesystem device
+boundaries, never follows symlinks, never reads symlink targets, never opens hard
+links, FIFOs, sockets, devices, or other special files, and records direct
+symlink/special matches as explicit omissions. Stable regular files are opened
+through the retained root descriptor, hashed while streamed through a synchronous
+sink, and checked for identity, mode, size, link count, mtime, and ctime before
+and after reading. A final complete inventory reconciliation detects tested
+replacement, rename, resize, relink, and mode-change races.
+
+Incomplete collection is explicit. Oversized matched files become omitted-limit
+metadata, matched symlinks and special entries become omissions, and blocked
+traversal prevents collection from being complete. Infrastructure failures,
+mutation, sink failure, or identity instability return no successful result and
+require the enclosing evidence transaction to abort.
+
+A compromised daemon, kernel, filesystem, mount namespace, or same-UID host
+process may defeat identity reporting or mutate state outside the collector's
+assumptions. GR-13B introduces no execution, CLI behavior, policy decision,
+rendering, Docker API import, evidence writer integration, hardened sandbox,
+signing, authentication, attestation, or provenance claim.

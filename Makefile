@@ -1,7 +1,7 @@
 GO ?= go
 GOFMT ?= gofmt
 
-.PHONY: fmt fmt-check vet lint test test-race test-integration schema-check test-fuzz-seeds test-gitstore test-gitstore-fuzz-seeds test-materialize test-materialize-fuzz-seeds test-pipeline test-pipeline-fuzz-seeds test-runner test-runner-fuzz-seeds test-evidence test-evidence-fuzz-seeds test-evidence-reader test-evidence-reader-fuzz-seeds test-observe test-observe-fuzz-seeds test-compare test-compare-fuzz-seeds test-policy test-policy-fuzz-seeds test-waiver test-waiver-fuzz-seeds test-policy-application test-report test-report-fuzz-seeds test-inspect test-inspect-fuzz-seeds test-demo test-demo-fuzz-seeds demo-golden-check test-dockerengine test-dockerdev test-dockerdev-fuzz-seeds test-dockerdev-integration build generate verify
+.PHONY: fmt fmt-check vet lint test test-race test-integration schema-check test-fuzz-seeds test-gitstore test-gitstore-fuzz-seeds test-materialize test-materialize-fuzz-seeds test-pipeline test-pipeline-fuzz-seeds test-runner test-runner-fuzz-seeds test-evidence test-evidence-fuzz-seeds test-evidence-reader test-evidence-reader-fuzz-seeds test-observe test-observe-fuzz-seeds test-compare test-compare-fuzz-seeds test-policy test-policy-fuzz-seeds test-waiver test-waiver-fuzz-seeds test-policy-application test-report test-report-fuzz-seeds test-inspect test-inspect-fuzz-seeds test-demo test-demo-fuzz-seeds demo-golden-check test-dockerengine test-dockerdev test-dockerdev-fuzz-seeds test-dockerdev-integration test-artifactcollect test-artifactcollect-fuzz-seeds build generate verify
 
 fmt:
 	$(GOFMT) -w .
@@ -42,6 +42,7 @@ test-fuzz-seeds:
 	$(GO) test ./internal/report -run 'FuzzVisibleDisplayText|FuzzMarkdownCodeSpan|FuzzRenderReportValue|FuzzBuildReportBindings' -count=1
 	$(GO) test ./internal/inspect -run 'FuzzParseInspectArguments|FuzzValidateInspectRequest|FuzzBuildPlanReconstructionInputs' -count=1
 	$(GO) test ./internal/demo -run 'FuzzParseDemoArguments|FuzzValidateDemoOutputPath|FuzzBuildFakeProgramCoverage|FuzzEncodeDemoMetadata' -count=1
+	$(GO) test ./internal/artifactcollect -run 'FuzzValidateArtifactCollectionPath|FuzzMatchArtifactPattern|FuzzReconcileWorkspaceInventories|FuzzValidateArtifactSinkResult|FuzzCollectPlanValidationNoFilesystem' -count=1
 
 test-gitstore:
 	$(GO) test ./internal/gitstore -count=1
@@ -156,3 +157,10 @@ test-dockerdev-fuzz-seeds:
 
 test-dockerdev-integration:
 	GLASSROOT_DOCKERDEV_INTEGRATION=1 $(GO) test ./internal/runner/dockerdev -run TestDockerDevIntegration -count=1
+
+
+test-artifactcollect:
+	$(GO) test ./internal/artifactcollect -count=1
+
+test-artifactcollect-fuzz-seeds:
+	$(GO) test ./internal/artifactcollect -run 'FuzzValidateArtifactCollectionPath|FuzzMatchArtifactPattern|FuzzReconcileWorkspaceInventories|FuzzValidateArtifactSinkResult|FuzzCollectPlanValidationNoFilesystem' -count=1

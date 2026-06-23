@@ -1159,18 +1159,33 @@ Acceptance criteria:
 - is unavailable to public/untrusted execution policy;
 - adds no execution CLI.
 
-### GR-13B: Local docker-dev run orchestration
+### GR-13B: Safe post-run artifact collection
 
 Acceptance criteria:
 
-- adds `glassroot run` with explicit docker-dev and unsafe flags;
-- accepts exact Git commits and an explicit local Docker socket;
-- materializes a fresh workspace per attempt;
-- bridges logs into evidence bundles;
-- safely collects configured artifacts from hostile post-run workspaces;
-- produces and verifies a complete bundle and report;
-- labels the result development-only;
-- never falls back to host execution or docker-dev implicitly;
+- binds a fresh private workspace before execution;
+- treats all post-run filesystem state as hostile;
+- inventories the complete workspace through traversal-resistant operations;
+- never follows symlinks or opens hard links and special files;
+- matches trusted artifact patterns without filesystem glob expansion;
+- streams stable regular files through a bounded synchronous sink;
+- verifies size, content digest, mode, identity, and final inventory stability;
+- makes omissions and incomplete collection explicit;
+- executes nothing.
+
+### GR-13C: Local docker-dev run orchestration
+
+Acceptance criteria:
+
+- adds `glassroot run` with explicit docker-dev and unsafe acknowledgement;
+- accepts an explicit local Unix Docker socket and exact Git commits;
+- creates a separate fresh materialized workspace for every attempt;
+- binds every workspace to the Docker runner and artifact collector before
+  execution;
+- bridges bounded stdout/stderr and artifacts into evidence.Session;
+- produces, verifies, inspects, and renders a complete development-only report;
+- cleans all containers, workspaces, and partial output;
+- never falls back to host execution or chooses docker-dev implicitly;
 - remains local-only and refuses public webhook use.
 
 ### GR-14: gVisor technical spike
