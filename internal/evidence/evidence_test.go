@@ -133,6 +133,47 @@ func TestFakeRunnerBundleIntegrationPublishesDeterministicDirectory(t *testing.T
 	}
 }
 
+func TestCommitPreservesEmptyLimitationsAsArrays(t *testing.T) {
+	plan := mustPlan(t)
+	writer := mustWriter(t, t.TempDir(), DefaultLimits())
+	session, err := writer.Begin(context.Background(), plan)
+	if err != nil {
+		t.Fatalf("Begin() error = %v", err)
+	}
+	backend := mustFake(t, fakeProgramForPlan(plan))
+	result, err := runner.ExecutePlan(context.Background(), plan, backend, runner.SyntheticTestRequirements(), runner.DefaultLimits(), session)
+	if err != nil {
+		t.Fatalf("ExecutePlan() error = %v", err)
+	}
+	result.Limitations = []model.Limitation{}
+	for i := range result.Attempts {
+		result.Attempts[i].Limitations = []model.Limitation{}
+		result.Attempts[i].Outcome.Limitations = []model.Limitation{}
+	}
+	bundle, err := session.Commit(context.Background(), Complete(result))
+	if err != nil {
+		t.Fatalf("Commit() error = %v", err)
+	}
+	execution := readFile(t, bundle.Path, "execution.json")
+	if bytes.Contains(execution, []byte(`"limitations":null`)) {
+		t.Fatalf("execution limitations serialized as null: %s", execution)
+	}
+	if !bytes.Contains(execution, []byte(`"limitations":[]`)) {
+		t.Fatalf("execution limitations did not serialize as arrays: %s", execution)
+	}
+	for _, rel := range []string{
+		"attempts/base/build/repetition-0001/result.json",
+		"attempts/base/test/repetition-0001/result.json",
+		"attempts/head/build/repetition-0001/result.json",
+		"attempts/head/test/repetition-0001/result.json",
+	} {
+		attempt := readFile(t, bundle.Path, rel)
+		if bytes.Contains(attempt, []byte(`"limitations":null`)) || !bytes.Contains(attempt, []byte(`"limitations":[]`)) {
+			t.Fatalf("%s limitations did not serialize as an empty array: %s", rel, attempt)
+		}
+	}
+}
+
 func TestLogsArtifactsAndIncompleteEvidenceAreExplicit(t *testing.T) {
 	plan := mustPlan(t)
 	parent := t.TempDir()

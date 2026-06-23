@@ -33,7 +33,8 @@ func (s *Session) writeResults(completion Completion) error {
 		if r.AcceptedEventCount != as.eventsCount || r.FirstAcceptedSequence != as.firstSeq || r.LastAcceptedSequence != as.lastSeq {
 			return attemptErr(CodeResultInvalid, "result", "events", as.attemptID, "attempt result event range does not match persisted events", nil)
 		}
-		doc := AttemptResultDocument{SchemaVersion: model.SchemaVersionAttemptResultV1Alpha1, AttemptID: r.AttemptID, Revision: r.Revision, ScenarioID: r.ScenarioID, Repetition: r.Repetition, TargetOutcome: r.Outcome.Status, ExitCode: cloneIntPtr(r.Outcome.ExitCode), DurationMillis: r.Outcome.DurationMillis, FirstAcceptedSequence: r.FirstAcceptedSequence, LastAcceptedSequence: r.LastAcceptedSequence, AcceptedEventCount: r.AcceptedEventCount, Limitations: cloneLimitations(r.Limitations)}
+		attemptLimitations := cloneLimitations(r.Limitations)
+		doc := AttemptResultDocument{SchemaVersion: model.SchemaVersionAttemptResultV1Alpha1, AttemptID: r.AttemptID, Revision: r.Revision, ScenarioID: r.ScenarioID, Repetition: r.Repetition, TargetOutcome: r.Outcome.Status, ExitCode: cloneIntPtr(r.Outcome.ExitCode), DurationMillis: r.Outcome.DurationMillis, FirstAcceptedSequence: r.FirstAcceptedSequence, LastAcceptedSequence: r.LastAcceptedSequence, AcceptedEventCount: r.AcceptedEventCount, Limitations: attemptLimitations}
 		data, err := json.Marshal(doc)
 		if err != nil {
 			return errCode(CodeSerializationFailed, "result", "json", "marshal attempt result", err)
@@ -45,7 +46,8 @@ func (s *Session) writeResults(completion Completion) error {
 	}
 	execDoc := ExecutionDocument{SchemaVersion: model.SchemaVersionExecutionResultV1Alpha1, RunID: s.runID, PlanDigest: s.planDigest, Runner: completion.Execution.Runner, ExecutionComplete: completion.Execution.Complete, EvidenceComplete: !s.evidenceIncomplete && completion.Execution.Complete && !completion.Incomplete, BundleTransactionValid: true, TotalAcceptedEvents: completion.Execution.TotalEmittedEvents, Attempts: []AttemptExecutionSummary{}, Limitations: cloneLimitations(completion.Execution.Limitations), Failure: cloneFailure(completion.Failure)}
 	for _, r := range completion.Execution.Attempts {
-		execDoc.Attempts = append(execDoc.Attempts, AttemptExecutionSummary{AttemptID: r.AttemptID, Revision: r.Revision, ScenarioID: r.ScenarioID, Repetition: r.Repetition, TargetOutcome: r.Outcome.Status, ExitCode: cloneIntPtr(r.Outcome.ExitCode), DurationMillis: r.Outcome.DurationMillis, FirstAcceptedSequence: r.FirstAcceptedSequence, LastAcceptedSequence: r.LastAcceptedSequence, AcceptedEventCount: r.AcceptedEventCount, Limitations: cloneLimitations(r.Limitations)})
+		attemptLimitations := cloneLimitations(r.Limitations)
+		execDoc.Attempts = append(execDoc.Attempts, AttemptExecutionSummary{AttemptID: r.AttemptID, Revision: r.Revision, ScenarioID: r.ScenarioID, Repetition: r.Repetition, TargetOutcome: r.Outcome.Status, ExitCode: cloneIntPtr(r.Outcome.ExitCode), DurationMillis: r.Outcome.DurationMillis, FirstAcceptedSequence: r.FirstAcceptedSequence, LastAcceptedSequence: r.LastAcceptedSequence, AcceptedEventCount: r.AcceptedEventCount, Limitations: attemptLimitations})
 	}
 	data, err := json.Marshal(execDoc)
 	if err != nil {
@@ -170,10 +172,9 @@ func cloneFailure(f *FailureRecord) *FailureRecord {
 	return &c
 }
 func cloneLimitations(in []model.Limitation) []model.Limitation {
-	if in == nil {
-		return []model.Limitation{}
-	}
-	return append([]model.Limitation(nil), in...)
+	out := make([]model.Limitation, len(in))
+	copy(out, in)
+	return out
 }
 func cloneArtifactRecord(in ArtifactRecord) ArtifactRecord {
 	out := in

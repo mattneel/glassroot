@@ -161,7 +161,7 @@ func cloneResourceLimit(in *model.ResourceLimitObservation) *model.ResourceLimit
 
 func cloneLimitations(in []model.Limitation) []model.Limitation {
 	if in == nil {
-		return nil
+		return []model.Limitation{}
 	}
 	out := make([]model.Limitation, len(in))
 	copy(out, in)
