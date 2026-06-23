@@ -150,3 +150,39 @@ hostile data and verify paths, sizes, digests, JSON/JSONL structure, sequence
 numbers, and manifest invariants. GR-8A does not introduce a publisher,
 comparator, policy engine, renderer, workload-capable runner, workspace access,
 or target-code execution.
+
+## Evidence bundle reader boundary (GR-8B)
+
+Existing evidence bundle directories are hostile. Manifest paths, sizes,
+schema versions, event coordinates, logs, logical artifact paths, and artifact
+bytes are attacker-controlled until the reader verifies them. Structured JSON is
+also hostile because parser ambiguity can hide duplicated or case-variant fields.
+
+GR-8B opens one directory through a stable root descriptor, inventories the
+complete physical tree before trusting `manifest.json`, and rejects symlinks,
+hard links, special files, unsafe paths, unexpected modes, undeclared files, and
+unsupported layout entries. Payload files are read through opened descriptors;
+identity, link count, mode, size, mtime, and ctime are compared before and after
+reads. Mutations detected during verification fail closed.
+
+The strict decoder rejects duplicate JSON members, escaped-equivalent duplicate
+names, unknown fields, field-case variants, invalid UTF-8, trailing values, and
+non-writer-normalized JSON. JSONL events must have exact LF framing, schema
+versions, run/attempt coordinates, global sequences, deterministic event IDs,
+and typed payloads. The verifier cross-checks plan digest, execution metadata,
+attempt results, log capture states, artifact indexes, digest-derived object
+paths, completion flags, and every declared payload size and digest.
+
+Internal digest consistency does not establish provenance, authentication,
+signing, attestation, or truthfulness. An independently retained expected
+manifest digest can detect manifest substitution, but it still does not
+authenticate the writer. A compromised writer or runner may produce internally
+consistent false evidence. Verified hostile strings, logs, and artifact bytes
+still require safe rendering by GR-11.
+
+The initial reader is Linux-only and depends on ordinary filesystem identity
+reporting. Malicious kernels, hostile filesystems, bind mounts that cannot be
+distinguished by device/inode facts, sufficiently privileged concurrent
+mutation, compromised storage, and compromised control-plane code remain outside
+this guarantee. GR-8B does not execute target code, repair bundles, render
+reports, compare behavior, decide policy, sign evidence, or provide a sandbox.

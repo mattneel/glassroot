@@ -86,7 +86,7 @@ sha256(
 )
 ```
 
-Payload and manifest digests are raw-byte integrity comparison values. They are not signatures, authentication, attestations, canonical JSON claims, or proof that observations are truthful. GR-8B will recompute and verify them when opening existing bundles as hostile data.
+Payload and manifest digests are raw-byte integrity comparison values. They are not signatures, authentication, attestations, canonical JSON claims, or proof that observations are truthful. GR-8B recomputes and verifies them when opening existing bundles as hostile data. An independently retained expected manifest digest can detect manifest substitution, but neither payload nor manifest digest authenticates the writer or proves observations truthful.
 
 ## Atomic publication
 
@@ -105,4 +105,4 @@ The final path is returned only after publication succeeds. Failure removes stag
 
 ## Out of scope
 
-GR-8A does not read existing bundles, repair corrupt bundles, create archives, compress, encrypt, sign, attest, compare, evaluate policy, render, inspect, open workspaces, execute target code, or introduce a workload-capable runner. GR-8B adds the strict path-safe reader/verifier. GR-9 adds normalization/comparison. GR-11 adds safe rendering.
+GR-8A does not read existing bundles, repair corrupt bundles, create archives, compress, encrypt, sign, attest, compare, evaluate policy, render, inspect, open workspaces, execute target code, or introduce a workload-capable runner. GR-8B adds the strict path-safe reader/verifier documented in `docs/EVIDENCE_BUNDLE_READER.md`. GR-9 adds normalization/comparison. GR-11 adds safe rendering.
