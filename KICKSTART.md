@@ -1141,16 +1141,37 @@ Acceptance criteria:
 - no target or fixture content executes, no network is accessed, and no
   workload-capable runner is introduced.
 
-### GR-13: Docker development runner
+### GR-13A: Docker development runner core
 
 Acceptance criteria:
 
-- available only under explicit backend/unsafe flags;
-- target commands never run on host;
-- default network is none;
-- limits and cleanup tested;
-- report cannot label it hardened or secure;
-- public webhook components refuse this backend by default.
+- connects only to an explicit local Unix Docker socket;
+- uses the supported official Moby client/API modules;
+- requires an already-present immutable image;
+- requires explicit unsafe-development acknowledgement;
+- executes one attempt in one development-only container;
+- gives each attempt a distinct private workspace;
+- enforces network none, reviewed privilege reduction, and supported resource
+  limits;
+- streams bounded stdout/stderr;
+- truthfully reports observation gaps;
+- cancels, kills, and removes containers on every path;
+- is unavailable to public/untrusted execution policy;
+- adds no execution CLI.
+
+### GR-13B: Local docker-dev run orchestration
+
+Acceptance criteria:
+
+- adds `glassroot run` with explicit docker-dev and unsafe flags;
+- accepts exact Git commits and an explicit local Docker socket;
+- materializes a fresh workspace per attempt;
+- bridges logs into evidence bundles;
+- safely collects configured artifacts from hostile post-run workspaces;
+- produces and verifies a complete bundle and report;
+- labels the result development-only;
+- never falls back to host execution or docker-dev implicitly;
+- remains local-only and refuses public webhook use.
 
 ### GR-14: gVisor technical spike
 

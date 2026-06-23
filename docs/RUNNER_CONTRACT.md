@@ -35,6 +35,17 @@ Backends emit `EventDraft` values. Drafts contain timestamp, source, kind, and e
 
 `EventSink.Emit` is synchronous. Returning nil means the event was accepted. Returning an error stops execution immediately; there is no retry, no unbounded buffering, and no final lifecycle event after a failed sink. GR-8 will add the persistent bounded sink.
 
+
+## Attempt stdout/stderr output
+
+GR-13A adds a narrow optional output sink for process-capable backends. The sink
+is already bound to one attempt; a backend cannot choose another attempt identity
+through it. Writes are synchronous and provide backpressure. Bytes are raw
+evidence data: runners do not decode UTF-8, parse lines, sanitize controls, or
+render output. Existing callers that do not collect logs use an explicit no-log
+adapter rather than an implicit unbounded memory buffer. Evidence persistence is
+added by later orchestration layers.
+
 ## Outcomes, cancellation, and limits
 
 Target outcomes (`succeeded`, `failed`, `timed-out`, `resource-limited`) are data and are distinct from runner infrastructure errors. A nonzero simulated target failure does not stop later attempts; capability failures, backend errors, sink failures, cancellation, and timeouts do.

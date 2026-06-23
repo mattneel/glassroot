@@ -421,3 +421,39 @@ are not signatures, authorization, authentication, attestations, provenance, or
 proof that observations are truthful. GR-12 introduces no Docker, gVisor,
 Firecracker, target execution, network access, signing, publishing, or sandbox
 claim.
+
+## Docker development runner boundary (GR-13A)
+
+Docker-dev is the first Glassroot backend that actually executes target
+commands. It is restricted to trusted local fixture development and reports
+isolation tier `development-only`; ordinary Docker is not a hardened sandbox for
+hostile repositories or public pull requests.
+
+The Docker daemon and explicit Unix socket are trusted and highly privileged.
+Possession of the socket generally grants powerful control over the daemon host.
+The backend never discovers Docker configuration from the environment, Docker
+contexts, a working tree, or a default path, and it does not support remote TCP,
+TLS, SSH, or npipe endpoints.
+
+Image bytes and image configuration are selected only by an explicit local
+immutable digest reference. The backend inspects local image metadata and never
+pulls, builds, imports, loads, tags, pushes, searches, or logs into a registry.
+Image environment remains immutable-image behavior; the host environment is not
+inherited. An immutable digest is not a claim that image behavior is benign.
+
+Each container receives exactly one writable private host workspace bind and no
+Docker socket, device, secret, named volume, shared cache, or host namespace. It
+runs UID 0 inside the container under dropped capabilities, no-new-privileges,
+read-only root filesystem, default seccomp, Docker init, and network mode none.
+Network none is Docker enforcement, not an observing broker, and the backend does
+not claim comprehensive child-process, filesystem, syscall, or network
+observation.
+
+Resource enforcement depends on daemon and kernel configuration and is
+preflighted. Docker does not provide a portable exact writable-workspace disk
+limit in this design. Output bytes and daemon responses are hostile data.
+Cancellation, stop/kill/remove, and output draining can fail under host, kernel,
+daemon, or filesystem compromise. Same-UID host mutation, malicious mounts,
+container escape, daemon compromise, and kernel compromise remain outside the
+backend's guarantee. No public webhook or untrusted execution policy may select
+docker-dev.

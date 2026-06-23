@@ -1,7 +1,7 @@
 GO ?= go
 GOFMT ?= gofmt
 
-.PHONY: fmt fmt-check vet lint test test-race test-integration schema-check test-fuzz-seeds test-gitstore test-gitstore-fuzz-seeds test-materialize test-materialize-fuzz-seeds test-pipeline test-pipeline-fuzz-seeds test-runner test-runner-fuzz-seeds test-evidence test-evidence-fuzz-seeds test-evidence-reader test-evidence-reader-fuzz-seeds test-observe test-observe-fuzz-seeds test-compare test-compare-fuzz-seeds test-policy test-policy-fuzz-seeds test-waiver test-waiver-fuzz-seeds test-policy-application test-report test-report-fuzz-seeds test-inspect test-inspect-fuzz-seeds test-demo test-demo-fuzz-seeds demo-golden-check build generate verify
+.PHONY: fmt fmt-check vet lint test test-race test-integration schema-check test-fuzz-seeds test-gitstore test-gitstore-fuzz-seeds test-materialize test-materialize-fuzz-seeds test-pipeline test-pipeline-fuzz-seeds test-runner test-runner-fuzz-seeds test-evidence test-evidence-fuzz-seeds test-evidence-reader test-evidence-reader-fuzz-seeds test-observe test-observe-fuzz-seeds test-compare test-compare-fuzz-seeds test-policy test-policy-fuzz-seeds test-waiver test-waiver-fuzz-seeds test-policy-application test-report test-report-fuzz-seeds test-inspect test-inspect-fuzz-seeds test-demo test-demo-fuzz-seeds demo-golden-check test-dockerengine test-dockerdev test-dockerdev-fuzz-seeds test-dockerdev-integration build generate verify
 
 fmt:
 	$(GOFMT) -w .
@@ -142,3 +142,17 @@ test-demo-fuzz-seeds:
 
 demo-golden-check:
 	$(GO) test ./internal/demo -run TestGoldenOutputsMatchBuiltInFixtures -count=1
+
+
+test-dockerengine:
+	$(GO) test ./internal/dockerengine -count=1
+
+test-dockerdev:
+	$(GO) test ./internal/runner/dockerdev -count=1
+
+test-dockerdev-fuzz-seeds:
+	$(GO) test ./internal/dockerengine -run 'FuzzValidateDockerSocketPath|FuzzValidateImmutableLocalImage|FuzzDecodeDockerAttachFrames' -count=1
+	$(GO) test ./internal/runner/dockerdev -run 'FuzzValidateDockerDevWorkspace|FuzzBuildContainerConfiguration' -count=1
+
+test-dockerdev-integration:
+	GLASSROOT_DOCKERDEV_INTEGRATION=1 $(GO) test ./internal/runner/dockerdev -run TestDockerDevIntegration -count=1
