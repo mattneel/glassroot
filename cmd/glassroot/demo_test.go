@@ -60,7 +60,7 @@ func TestDemoFakeJSONOutputHasNoAddedNewline(t *testing.T) {
 	out := filepath.Join(t.TempDir(), "demo-json")
 	var stdout, stderr bytes.Buffer
 	code := run([]string{"demo", "fake", "--fixture", "control", "--format", "json", out}, &stdout, &stderr)
-	if code != 0 || stderr.Len() != 0 {
+	if code != 4 || stderr.Len() != 0 {
 		t.Fatalf("exit=%d stdout=%q stderr=%q", code, stdout.String(), stderr.String())
 	}
 	stored, err := os.ReadFile(filepath.Join(out, "report.json"))

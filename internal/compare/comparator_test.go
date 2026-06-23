@@ -56,6 +56,9 @@ func TestCompareVerifiedTraceProducesDeterministicBehavioralDelta(t *testing.T) 
 	if doc.PlanDigest == "" || doc.ManifestDigest == "" || doc.ManifestVerificationMode != string(evidence.VerificationModeExpectedManifestDigest) {
 		t.Fatalf("source binding missing: %+v", doc)
 	}
+	if !doc.EvidenceContext.SyntheticEvidence || doc.EvidenceContext.ExecutesTargetCode {
+		t.Fatalf("evidence context not retained from normalized input: %+v", doc.EvidenceContext)
+	}
 	if len(doc.ScenarioComparisons) != 2 {
 		t.Fatalf("scenario comparisons=%d, want 2", len(doc.ScenarioComparisons))
 	}
@@ -163,6 +166,30 @@ func TestOccurrenceProfilesAbsenceRulesAndModificationCorrelation(t *testing.T) 
 	}
 	if !sawModified || !sawCoverageLimited {
 		t.Fatalf("expected modified and coverage-limited records; got %+v", delta.Document().Records)
+	}
+}
+
+func TestComparisonCarriesEvidenceContextWithoutDeltaRecords(t *testing.T) {
+	doc := traceDocumentForUnitTests([]observe.AttemptTrace{
+		attemptTrace("att-base-unit-r1", model.RevisionKindBase, "unit", 1, observe.CoverageComplete),
+		attemptTrace("att-head-unit-r1", model.RevisionKindHead, "unit", 1, observe.CoverageComplete),
+	})
+	doc.EvidenceComplete = true
+	doc.EvidenceContext = model.EvidenceContext{SyntheticEvidence: true, ExecutesTargetCode: false}
+	cmp := mustComparator(t, DefaultLimits())
+	delta, err := cmp.compareDocument(context.Background(), doc)
+	if err != nil {
+		t.Fatalf("Compare() error = %v", err)
+	}
+	got := delta.Document()
+	if len(got.Records) != 0 {
+		t.Fatalf("expected zero ordinary delta records, got %+v", got.Records)
+	}
+	if !got.EvidenceContext.SyntheticEvidence || got.EvidenceContext.ExecutesTargetCode {
+		t.Fatalf("zero-record delta lost evidence context: %+v", got.EvidenceContext)
+	}
+	if !bytes.Contains(delta.JSON(), []byte(`"evidenceContext":{"syntheticEvidence":true,"executesTargetCode":false}`)) {
+		t.Fatalf("evidence context missing from frozen delta JSON: %s", delta.JSON())
 	}
 }
 
@@ -561,7 +588,7 @@ func traceDocumentForUnitTests(attempts []observe.AttemptTrace) observe.TraceSet
 		Profile:       observe.NormalizationProfile{Version: observe.ProfileVersionV1Alpha1, IgnoreFields: []string{observe.IgnoreFieldEventTimestamp, observe.IgnoreFieldProcessPID}, ProcessIdentityAlgorithm: observe.ProcessIdentityAlgorithmV1, TimestampAlgorithm: observe.TimestampAlgorithmV1, PathRootAlgorithm: observe.PathRootAlgorithmV1, RootAliases: []observe.PathRootAlias{{Namespace: observe.PathNamespaceWorkdirRoot, RootIndex: 0, Root: "/workspace", Alias: "@workdir"}}},
 		PlanDigest:    model.Digest("sha256:" + strings.Repeat("1", 64)), ManifestDigest: model.Digest("sha256:" + strings.Repeat("2", 64)), RunID: "run-0001",
 		ManifestVerification: observe.ManifestVerification{Mode: evidence.VerificationModeExpectedManifestDigest, ManifestDigest: model.Digest("sha256:" + strings.Repeat("2", 64)), ExpectedManifestDigestSupplied: true, ExpectedManifestDigestMatched: true, InternallyConsistent: true, Limitations: []model.Limitation{}},
-		ExecutionComplete:    true, EvidenceComplete: false, Attempts: attempts, Limitations: []model.Limitation{},
+		ExecutionComplete:    true, EvidenceComplete: false, EvidenceContext: model.EvidenceContext{SyntheticEvidence: true, ExecutesTargetCode: false}, Attempts: attempts, Limitations: []model.Limitation{},
 	}
 }
 

@@ -1,5 +1,5 @@
 # Glassroot report
-- Report digest: ` sha256:b71364935ed4955877b2643efefdea448d791f9c765c99c6889a03c97da4c4fc `
+- Report digest: ` sha256:c50b8f791602981e5d874f8d1a87190b3abf0d3301c72e4e8a4d0dfd5a2db2bd `
 - Run ID: ` gr12-behavior-change `
 - Overall effective disposition: ` requires-review `
 - Manifest verification: ` expected-manifest-digest `
@@ -126,6 +126,7 @@
 - Base observed: ` false `
 - Head observed: ` false `
 - ` limitation synthetic-evidence `: ` Policy evaluation is based on synthetic evidence; it is not target workload behavior. `
+- ` limitation synthetic-no-target-execution `: ` No target code was executed; absence of ordinary behavioral deltas is not a real workload pass. `
 
 ### Finding
 - Finding ID: ` finding-9d0660fdf2a658a0af307a4be0b5a27341dbe29ab5aeb0600475ba55106a3eff `

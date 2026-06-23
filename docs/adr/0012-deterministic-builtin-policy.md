@@ -51,6 +51,15 @@ and head repeatability improvements do not produce ordinary behavior findings in
 v1alpha1. Incomplete evidence cannot establish absence. Synthetic evidence is
 represented explicitly and does not imply target code behaved that way.
 
+The GR-12 synthetic-review correction requires `GR-OBS-001` review when a
+complete `BehavioralDelta` carries typed evidence context showing
+`syntheticEvidence=true` or `executesTargetCode=false`, even if there are zero
+ordinary delta records. This preserves the distinction between equivalent
+synthetic plumbing evidence and a passed real-workload assessment. The decision
+is made from the immutable delta context only; renderer notices, limitation
+prose, evidence bundles, runner implementations, and repository content do not
+define or clear this policy state.
+
 Severity, confidence, and disposition are separate. Severity is fixed by rule
 and typed condition. Confidence is a deterministic evidence-strength category
 from comparison basis plus observation-source caps, not model confidence or

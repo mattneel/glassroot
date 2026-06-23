@@ -79,6 +79,26 @@ func TestHeadWaiverCannotAffectEffectiveApplication(t *testing.T) {
 	}
 }
 
+func TestSyntheticObservationFindingCannotBeWaived(t *testing.T) {
+	fx := newApplicationFixture(t)
+	target := findingForRule(fx.evaluation.Document(), "GR-OBS-001")
+	fx.source.putWaiver(fx.base, config.RevisionFile{Kind: config.EntryKindRegularFile, Data: waiverYAML("synthetic-observation", target.ID, target.RuleID, "2026-06-23T00:00:00Z", "2026-07-23T00:00:00Z")})
+
+	frozen, err := mustApplier(t).Apply(context.Background(), fx.request(time.Date(2026, 6, 24, 0, 0, 0, 0, time.UTC)))
+	if err != nil {
+		t.Fatalf("Apply() error = %v", err)
+	}
+	doc := frozen.Document()
+	applied := appliedFindingForRule(doc, "GR-OBS-001")
+	if applied == nil || applied.EffectiveDisposition != model.DispositionRequiresReview || applied.AppliedWaiver != nil {
+		t.Fatalf("synthetic GR-OBS finding should remain unwaived: %+v", applied)
+	}
+	gov := appliedFindingForRule(doc, "GR-WAIVER-001")
+	if gov == nil || gov.EffectiveDisposition != model.DispositionFailed {
+		t.Fatalf("invalid GR-OBS waiver target should be a failed governance issue: %+v", doc.AppliedFindings)
+	}
+}
+
 func TestInvalidBaseWaiverAppliesNoneAndEmitsFailedGovernance(t *testing.T) {
 	fx := newApplicationFixture(t, headRecord("delta-net", model.DeltaKindAdded, "network-connection", model.ObservationSourceHostObserved, model.ComparisonBasisCompleteObservation, networkSnapshot("fact-net", "denied")))
 	fx.source.putWaiver(fx.base, config.RevisionFile{Kind: config.EntryKindRegularFile, Data: []byte("apiVersion: glassroot.dev/v1alpha1\nkind: WaiverSet\nmetadata:\n  name: default\nspec:\n  waivers:\n    - id: bad\n")})

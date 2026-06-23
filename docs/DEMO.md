@@ -132,8 +132,11 @@ The control fixture uses distinct base and head commits but emits semantically
 equivalent complete synthetic behavior. It demonstrates that source revision
 changes alone do not invent ordinary behavioral findings. It still reports fake
 runner, synthetic-evidence, no-target-code-executed, network-deny-not-enforced,
-and passed-is-not-proof-of-safety notices; a passed control disposition is not a
-safety claim.
+and passed-is-not-proof-of-safety notices. Under strict v1 policy, the typed
+synthetic/no-target evidence context produces one global `GR-OBS-001`
+`requires-review` finding even when the behavioral delta has zero ordinary
+records. The absence of ordinary deltas in this synthetic fixture is distinct
+from a passed real-workload assessment and is not a safety claim.
 
 ## Evidence and reports
 

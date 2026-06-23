@@ -69,6 +69,7 @@ func TestPolicyEvaluationFromDeterministicDelta(t *testing.T) {
 func TestIncompleteEvidenceProducesSingleFailedObservationFinding(t *testing.T) {
 	eval := mustEvaluator(t)
 	delta := policyDeltaDoc()
+	delta.EvidenceContext = model.EvidenceContext{SyntheticEvidence: true, ExecutesTargetCode: false}
 	delta.ExecutionComplete = false
 	delta.EvidenceComplete = false
 	frozen, err := eval.evaluateDeltaDocument(context.Background(), PolicyProfileStrict(), delta, []byte(`{}`), model.Digest("sha256:"+strings.Repeat("8", 64)))
@@ -90,6 +91,106 @@ func TestIncompleteEvidenceProducesSingleFailedObservationFinding(t *testing.T) 
 	}
 	if obsFailed != 1 {
 		t.Fatalf("failed observation findings=%d, want 1: %+v", obsFailed, doc.Findings)
+	}
+	if countGlobalSyntheticObservationFindings(doc) != 0 {
+		t.Fatalf("incomplete evidence should not duplicate synthetic review finding: %+v", doc.Findings)
+	}
+}
+
+func TestCompleteSyntheticZeroDeltaRequiresReview(t *testing.T) {
+	eval := mustEvaluator(t)
+	delta := policyDeltaDoc()
+	delta.EvidenceContext = model.EvidenceContext{SyntheticEvidence: true, ExecutesTargetCode: false}
+	frozen, err := eval.evaluateDeltaDocument(context.Background(), PolicyProfileStrict(), delta, []byte(`{}`), model.Digest("sha256:"+strings.Repeat("8", 64)))
+	if err != nil {
+		t.Fatalf("evaluateDeltaDocument() error = %v", err)
+	}
+	doc := frozen.Document()
+	if doc.OverallDisposition != model.DispositionRequiresReview {
+		t.Fatalf("overall = %q, want requires-review", doc.OverallDisposition)
+	}
+	if len(doc.Findings) != 1 {
+		t.Fatalf("findings=%d, want exactly one synthetic review finding: %+v", len(doc.Findings), doc.Findings)
+	}
+	f := doc.Findings[0]
+	if f.RuleID != "GR-OBS-001" || f.RuleVersion == "" || f.Title != "Observation coverage incomplete or weakened" {
+		t.Fatalf("unexpected synthetic finding identity: %+v", f)
+	}
+	if f.Severity != model.SeverityMedium || f.Confidence != model.ConfidenceHigh || f.Disposition != model.DispositionRequiresReview || f.Waived {
+		t.Fatalf("synthetic finding classification wrong: %+v", f)
+	}
+	if len(f.DeltaRecordIDs) != 0 || len(f.Evidence) != 0 || f.BaseObserved || f.HeadObserved {
+		t.Fatalf("global synthetic finding should not invent records/evidence/observations: %+v", f)
+	}
+	if !strings.Contains(f.Summary, "synthetic evidence") || !strings.Contains(f.Summary, "no target code") {
+		t.Fatalf("synthetic summary does not explain typed evidence context: %q", f.Summary)
+	}
+}
+
+func TestNoTargetExecutionZeroDeltaRequiresReview(t *testing.T) {
+	eval := mustEvaluator(t)
+	delta := policyDeltaDoc()
+	delta.EvidenceContext = model.EvidenceContext{SyntheticEvidence: false, ExecutesTargetCode: false}
+	frozen, err := eval.evaluateDeltaDocument(context.Background(), PolicyProfileStrict(), delta, []byte(`{}`), model.Digest("sha256:"+strings.Repeat("8", 64)))
+	if err != nil {
+		t.Fatalf("evaluateDeltaDocument() error = %v", err)
+	}
+	doc := frozen.Document()
+	if countGlobalSyntheticObservationFindings(doc) != 1 || doc.OverallDisposition != model.DispositionRequiresReview {
+		t.Fatalf("no-target execution did not produce one review finding: overall=%s findings=%+v", doc.OverallDisposition, doc.Findings)
+	}
+}
+
+func TestSyntheticEvidenceAndNoTargetExecutionShareOneFinding(t *testing.T) {
+	eval := mustEvaluator(t)
+	delta := policyDeltaDoc()
+	delta.EvidenceContext = model.EvidenceContext{SyntheticEvidence: true, ExecutesTargetCode: false}
+	first, err := eval.evaluateDeltaDocument(context.Background(), PolicyProfileStrict(), delta, []byte(`{}`), model.Digest("sha256:"+strings.Repeat("8", 64)))
+	if err != nil {
+		t.Fatalf("first evaluateDeltaDocument() error = %v", err)
+	}
+	second, err := eval.evaluateDeltaDocument(context.Background(), PolicyProfileStrict(), delta, []byte(`{}`), model.Digest("sha256:"+strings.Repeat("8", 64)))
+	if err != nil {
+		t.Fatalf("second evaluateDeltaDocument() error = %v", err)
+	}
+	if countGlobalSyntheticObservationFindings(first.Document()) != 1 {
+		t.Fatalf("both synthetic flags should produce one finding: %+v", first.Document().Findings)
+	}
+	id1 := first.Document().Findings[0].ID
+	id2 := second.Document().Findings[0].ID
+	if id1 == "" || id1 != id2 {
+		t.Fatalf("synthetic finding ID not deterministic: %q vs %q", id1, id2)
+	}
+}
+
+func TestRealCompleteZeroDeltaCanPass(t *testing.T) {
+	eval := mustEvaluator(t)
+	delta := policyDeltaDoc()
+	delta.EvidenceContext = model.EvidenceContext{SyntheticEvidence: false, ExecutesTargetCode: true}
+	frozen, err := eval.evaluateDeltaDocument(context.Background(), PolicyProfileStrict(), delta, []byte(`{}`), model.Digest("sha256:"+strings.Repeat("8", 64)))
+	if err != nil {
+		t.Fatalf("evaluateDeltaDocument() error = %v", err)
+	}
+	doc := frozen.Document()
+	if len(doc.Findings) != 0 || doc.OverallDisposition != model.DispositionPassed {
+		t.Fatalf("real complete zero-delta context should not trigger synthetic policy: overall=%s findings=%+v", doc.OverallDisposition, doc.Findings)
+	}
+}
+
+func TestSyntheticPolicyUsesTypedContextNotLimitationProse(t *testing.T) {
+	eval := mustEvaluator(t)
+	delta := policyDeltaDoc()
+	delta.EvidenceContext = model.EvidenceContext{SyntheticEvidence: false, ExecutesTargetCode: true}
+	delta.Limitations = []model.Limitation{
+		{ID: "renderer-notice-like", Summary: "synthetic fake no target code executed"},
+	}
+	frozen, err := eval.evaluateDeltaDocument(context.Background(), PolicyProfileStrict(), delta, []byte(`{}`), model.Digest("sha256:"+strings.Repeat("8", 64)))
+	if err != nil {
+		t.Fatalf("evaluateDeltaDocument() error = %v", err)
+	}
+	doc := frozen.Document()
+	if countGlobalSyntheticObservationFindings(doc) != 0 || doc.OverallDisposition != model.DispositionPassed {
+		t.Fatalf("limitation prose or renderer-like notice drove policy: overall=%s findings=%+v", doc.OverallDisposition, doc.Findings)
 	}
 }
 
@@ -287,6 +388,7 @@ func policyDeltaDoc(records ...model.DeltaRecord) model.BehavioralDelta {
 		ManifestVerificationMode:    "expected-manifest-digest",
 		ExecutionComplete:           true,
 		EvidenceComplete:            true,
+		EvidenceContext:             model.EvidenceContext{SyntheticEvidence: true, ExecutesTargetCode: false},
 		ComparisonProfile:           model.ComparisonProfile{Version: compare.ComparisonProfileVersionV1Alpha1, RequiredNormalizationProfile: "glassroot.dev/normalization-profile/v1alpha1", IncludedFactKinds: []string{"artifact-activity", "dns-query", "filesystem-chmod", "filesystem-create", "filesystem-delete", "filesystem-read", "filesystem-rename", "filesystem-write", "network-connection", "observer-warning", "process-exit", "process-start", "resource-limit", "scenario-completed", "scenario-started", "unsupported-observation"}},
 		NormalizationProfileVersion: "glassroot.dev/normalization-profile/v1alpha1",
 		ScenarioIDs:                 []string{"test"},
@@ -295,6 +397,16 @@ func policyDeltaDoc(records ...model.DeltaRecord) model.BehavioralDelta {
 		Summary:                     summarizeDeltaRecords(records),
 		Limitations:                 []model.Limitation{},
 	}
+}
+
+func countGlobalSyntheticObservationFindings(doc EvaluationDocument) int {
+	var n int
+	for _, f := range doc.Findings {
+		if f.RuleID == "GR-OBS-001" && len(f.DeltaRecordIDs) == 0 && f.Disposition == model.DispositionRequiresReview {
+			n++
+		}
+	}
+	return n
 }
 
 func summarizeDeltaRecords(records []model.DeltaRecord) model.DeltaSummary {

@@ -153,6 +153,8 @@ GR-9B keeps the `glassroot.dev/behavioral-delta/v1alpha1` schema-version value a
 
 GR-9B extends `EvidenceRef` with optional event-stream digest/path, event sequence, revision, scenario ID, and repetition fields so derived deltas can point to verified GR-8B event streams without exposing host paths. These are additive fields only. Existing v1alpha1 compatibility fixtures are preserved; a separate comparator golden fixture records the current GR-9B output.
 
+The GR-12 synthetic-review correction keeps the `glassroot.dev/behavioral-delta/v1alpha1` schema-version value and adds the `evidenceContext` object to `BehavioralDelta` with `syntheticEvidence` and `executesTargetCode` booleans. The fields are additive typed context derived from verified normalized evidence. They ensure policy can distinguish a real complete zero-delta comparison from a synthetic/no-target complete zero-delta comparison without inspecting renderer notices, limitation prose, runner implementations, or evidence bundles. Because the context participates in frozen behavioral-delta JSON, it also participates in the behavioral-delta digest and downstream policy/report digests.
+
 Behavioral-delta record IDs, typed anchor digests, and delta JSON digests are computed outside the model compatibility fixtures. They are deterministic equality keys for Glassroot comparison output and do not make canonical JSON, authentication, signing, provenance, attestation, or safety claims.
 
 ### GR-10A additive finding fields

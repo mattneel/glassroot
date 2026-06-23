@@ -135,7 +135,8 @@ func (n *Normalizer) Normalize(ctx context.Context, bundle *evidence.Bundle) (*T
 		}
 		attemptDocs[i].Limitations = sortLimitations(attemptDocs[i].Limitations)
 	}
-	doc := TraceSetDocument{SchemaVersion: TraceSetSchemaV1Alpha1, Profile: profile, PlanDigest: manifest.PlanDigest, ManifestDigest: manifestDigest, RunID: manifest.RunID, ManifestVerification: manifestVerificationFromEvidence(verification), ExecutionComplete: manifest.ExecutionComplete, EvidenceComplete: manifest.EvidenceComplete, Attempts: attemptDocs, Limitations: global}
+	evidenceContext := model.EvidenceContext{SyntheticEvidence: execution.Runner.SyntheticEvidence, ExecutesTargetCode: execution.Runner.ExecutesTargetCode}
+	doc := TraceSetDocument{SchemaVersion: TraceSetSchemaV1Alpha1, Profile: profile, PlanDigest: manifest.PlanDigest, ManifestDigest: manifestDigest, RunID: manifest.RunID, ManifestVerification: manifestVerificationFromEvidence(verification), ExecutionComplete: manifest.ExecutionComplete, EvidenceComplete: manifest.EvidenceComplete, EvidenceContext: evidenceContext, Attempts: attemptDocs, Limitations: global}
 	return &TraceSet{doc: cloneTraceDocument(doc)}, nil
 }
 

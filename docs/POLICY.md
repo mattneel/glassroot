@@ -65,12 +65,15 @@ must not claim that absence was established on the incomplete side.
 ### GR-OBS-001
 
 Triggers on global incomplete execution/evidence, decreased coverage records,
-new observer warnings or unsupported-observation facts, and synthetic evidence.
-Execution or evidence incompleteness receives severity `high`, confidence
-`high`, and disposition `failed`. Synthetic evidence receives severity `medium`,
-confidence `high` for the evidence-state fact, and disposition
-`requires-review`. Internal-consistency-only manifest verification is retained
-as an evaluation limitation but does not by itself emit a finding.
+new observer warnings or unsupported-observation facts, and typed evidence
+context indicating synthetic evidence or no target-code execution. Execution or
+evidence incompleteness receives severity `high`, confidence `high`, and
+disposition `failed`. A complete evaluation whose immutable `BehavioralDelta`
+context says `syntheticEvidence=true` or `executesTargetCode=false` receives
+exactly one global severity `medium`, confidence `high`, disposition
+`requires-review` finding. This can happen even when there are zero ordinary
+behavior-change records. Internal-consistency-only manifest verification is
+retained as an evaluation limitation but does not by itself emit a finding.
 
 ### GR-PROC-001
 
@@ -142,7 +145,12 @@ Source caps are applied explicitly:
 - synthetic-test-generated target-behavior observations: `low`.
 
 GR-OBS-001 evidence-state findings may be `high` confidence because the state is
-directly known.
+directly represented by typed evidence/comparison context.
+
+The synthetic/no-target GR-OBS-001 decision uses only typed context carried in
+the immutable `BehavioralDelta`; renderer notices and limitation prose do not
+drive policy. Synthetic evidence can support plumbing tests, but strict v1 does
+not treat it as sufficient for target-behavior conclusions.
 
 Disposition is independent. GR-10A uses `failed` only when execution or evidence
 is incomplete. Other findings are `requires-review`. An evaluation with no

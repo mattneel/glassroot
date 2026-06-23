@@ -239,12 +239,15 @@ collapsed with host, sandbox, broker, guest, workload, static-analysis, or model
 sources.
 
 Behavioral deltas preserve raw event-stream references so policy and rendering
-stages can point back to verified evidence. Delta record IDs and delta digests
-provide deterministic equality only. They are not authentication, signing,
-attestation, provenance, authorization, risk scoring, or proof that observations
-are truthful or safe. A compromised comparator may forge, omit, or misclassify
-deltas. GR-9B introduces no findings, severity, confidence, disposition, waiver,
-rendering, signing, target execution, or sandbox.
+stages can point back to verified evidence. They also preserve typed
+evidence-context facts such as whether evidence is synthetic and whether target
+code was executed, even when there are zero ordinary behavior-change records.
+Delta record IDs and delta digests provide deterministic equality only. They are
+not authentication, signing, attestation, provenance, authorization, risk
+scoring, or proof that observations are truthful or safe. A compromised
+comparator may forge, omit, or misclassify deltas or evidence context. GR-9B
+introduces no findings, severity, confidence, disposition, waiver, rendering,
+signing, target execution, or sandbox.
 
 ## Built-in policy boundary (GR-10A)
 
@@ -391,6 +394,12 @@ or turn the pipeline `run` string into behavior. Synthetic behavior is not
 derived from source execution and must not be described as target-workload
 observation, malicious intent, sandbox evidence, provenance, authentication, or a
 safety claim.
+
+Strict v1 policy treats complete synthetic evidence or no-target-code execution
+as requiring review through a typed `GR-OBS-001` evidence-state finding. This
+means the control fixture can demonstrate zero ordinary behavioral deltas without
+being treated as a passed real-workload assessment. Report notices remain
+presentation metadata and are not policy inputs.
 
 The generated bare Git store is control-plane-created fixture metadata. It is not
 copied from caller input, does not use a worktree, and is verified through the

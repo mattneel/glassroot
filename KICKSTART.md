@@ -795,6 +795,11 @@ No arbitrary code execution.
 
 ### M2 — Behavioral comparator vertical slice
 
+Status: complete after the GR-12 synthetic-review follow-up. The control fixture
+has zero ordinary behavioral delta records and no ordinary behavior findings,
+but strict policy still returns `requires-review` because its evidence is
+synthetic and no target code executes.
+
 Deliver:
 
 - event normalization;
@@ -1126,7 +1131,8 @@ Acceptance criteria:
 - the behavior-change fixture demonstrates head-only synthetic process,
   denied-network, executable-artifact/file, and changed-artifact behavior;
 - the control fixture demonstrates that source revision changes alone do not
-  create ordinary head-positive behavioral findings;
+  create ordinary head-positive behavioral findings while still requiring review
+  for synthetic/no-target evidence;
 - evidence is written through GR-8A, verified through GR-8B, and reconstructed
   through `glassroot inspect` using exact commits and expected manifest digest;
 - reports retain exact evidence references for key synthetic behavior;

@@ -83,7 +83,7 @@ func (c *Comparator) compareDocument(ctx context.Context, doc observe.TraceSetDo
 		}
 	}
 	ids := scenarioIDs(groups)
-	delta := model.BehavioralDelta{SchemaVersion: model.SchemaVersionBehavioralDeltaV1Alpha1, ID: "delta-" + string(doc.PlanDigest)[7:23], RunID: doc.RunID, PlanDigest: doc.PlanDigest, ManifestDigest: doc.ManifestDigest, ManifestVerificationMode: string(doc.ManifestVerification.Mode), ExecutionComplete: doc.ExecutionComplete, EvidenceComplete: doc.EvidenceComplete, ComparisonProfile: profile, NormalizationProfileVersion: doc.Profile.Version, ScenarioIDs: ids, ScenarioComparisons: scenarios, Records: records, Summary: summarize(records), Limitations: sortLimitations(doc.Limitations)}
+	delta := model.BehavioralDelta{SchemaVersion: model.SchemaVersionBehavioralDeltaV1Alpha1, ID: "delta-" + string(doc.PlanDigest)[7:23], RunID: doc.RunID, PlanDigest: doc.PlanDigest, ManifestDigest: doc.ManifestDigest, ManifestVerificationMode: string(doc.ManifestVerification.Mode), ExecutionComplete: doc.ExecutionComplete, EvidenceComplete: doc.EvidenceComplete, EvidenceContext: doc.EvidenceContext, ComparisonProfile: profile, NormalizationProfileVersion: doc.Profile.Version, ScenarioIDs: ids, ScenarioComparisons: scenarios, Records: records, Summary: summarize(records), Limitations: sortLimitations(doc.Limitations)}
 	data, err := json.Marshal(delta)
 	if err != nil {
 		return nil, errCode(CodeSerializationFailed, "freeze", "", "json", "serialize delta", err)

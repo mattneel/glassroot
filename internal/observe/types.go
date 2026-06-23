@@ -84,16 +84,17 @@ type ManifestVerification struct {
 }
 
 type TraceSetDocument struct {
-	SchemaVersion        string               `json:"schemaVersion"`
-	Profile              NormalizationProfile `json:"profile"`
-	PlanDigest           model.Digest         `json:"planDigest"`
-	ManifestDigest       model.Digest         `json:"manifestDigest"`
-	RunID                string               `json:"runId"`
-	ManifestVerification ManifestVerification `json:"manifestVerification"`
-	ExecutionComplete    bool                 `json:"executionComplete"`
-	EvidenceComplete     bool                 `json:"evidenceComplete"`
-	Attempts             []AttemptTrace       `json:"attempts"`
-	Limitations          []model.Limitation   `json:"limitations"`
+	SchemaVersion        string                `json:"schemaVersion"`
+	Profile              NormalizationProfile  `json:"profile"`
+	PlanDigest           model.Digest          `json:"planDigest"`
+	ManifestDigest       model.Digest          `json:"manifestDigest"`
+	RunID                string                `json:"runId"`
+	ManifestVerification ManifestVerification  `json:"manifestVerification"`
+	ExecutionComplete    bool                  `json:"executionComplete"`
+	EvidenceComplete     bool                  `json:"evidenceComplete"`
+	EvidenceContext      model.EvidenceContext `json:"evidenceContext"`
+	Attempts             []AttemptTrace        `json:"attempts"`
+	Limitations          []model.Limitation    `json:"limitations"`
 }
 
 type AttemptTrace struct {

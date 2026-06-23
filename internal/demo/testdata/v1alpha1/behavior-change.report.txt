@@ -1,5 +1,5 @@
 GLASSROOT REPORT
-report-digest: sha256:b71364935ed4955877b2643efefdea448d791f9c765c99c6889a03c97da4c4fc
+report-digest: sha256:c50b8f791602981e5d874f8d1a87190b3abf0d3301c72e4e8a4d0dfd5a2db2bd
 run-id: gr12-behavior-change
 overall-effective-disposition: requires-review
 
@@ -113,6 +113,7 @@ waived: false
 base-observed: false
 head-observed: false
 finding-limitation: synthetic-evidence:Policy evaluation is based on synthetic evidence; it is not target workload behavior.
+finding-limitation: synthetic-no-target-execution:No target code was executed; absence of ordinary behavioral deltas is not a real workload pass.
 finding: finding-9d0660fdf2a658a0af307a4be0b5a27341dbe29ab5aeb0600475ba55106a3eff
 origin: builtin-policy
 rule: GR-PROC-001 v1alpha1

@@ -88,8 +88,27 @@ func TestCreateControlPublishesSyntheticControlWithoutOrdinaryBehaviorFindings(t
 			t.Fatalf("control produced ordinary behavior rule %s; rules=%v", ordinary, sortedRuleList(rules))
 		}
 	}
-	if rules["GR-OBS-001"] {
-		t.Fatalf("control should not invent an observation finding when comparison produced no delta records; rules=%v", sortedRuleList(rules))
+	if !rules["GR-OBS-001"] {
+		t.Fatalf("control should require review for typed synthetic/no-target evidence; rules=%v", sortedRuleList(rules))
+	}
+	doc := res.Report.Document()
+	if len(doc.Behavior.Records) != 0 {
+		t.Fatalf("control should retain zero ordinary behavioral delta records, got %+v", doc.Behavior.Records)
+	}
+	var obs int
+	for _, f := range doc.Policy.AppliedFindings {
+		if f.Original.RuleID == "GR-OBS-001" {
+			obs++
+			if f.EffectiveDisposition != model.DispositionRequiresReview || f.Original.Disposition != model.DispositionRequiresReview || f.Original.Waived {
+				t.Fatalf("synthetic GR-OBS finding classification wrong: %+v", f)
+			}
+		}
+	}
+	if obs != 1 {
+		t.Fatalf("control should have exactly one synthetic GR-OBS finding, got %d: %+v", obs, doc.Policy.AppliedFindings)
+	}
+	if res.EffectiveDisposition != model.DispositionRequiresReview || res.ExpectedExitCode != 4 {
+		t.Fatalf("control disposition/exit = %s/%d, want requires-review/4", res.EffectiveDisposition, res.ExpectedExitCode)
 	}
 	notices := noticeCodes(res.Report.Document())
 	for _, code := range []string{"fake-runner", "synthetic-evidence", "no-target-code-executed", "passed-is-not-proof-of-safety"} {
@@ -445,6 +464,9 @@ func assertInspectMatchesPublishedReports(t *testing.T, root string, md Metadata
 	res, err := i.Inspect(context.Background(), inspect.Request{BundleDir: filepath.Join(root, "evidence"), GitDir: filepath.Join(root, "fixture.git"), BaseCommitID: md.BaseCommitID, HeadCommitID: md.HeadCommitID, EvaluatedAt: md.PolicyEvaluatedAtTime(), ManifestIntegrityMode: inspect.ManifestIntegrityExpectedDigest, ExpectedManifestDigest: md.ManifestDigest})
 	if err != nil {
 		t.Fatalf("Inspect published output: %v", err)
+	}
+	if res.OverallDisposition != md.EffectiveDisposition {
+		t.Fatalf("inspect disposition = %s, want metadata %s", res.OverallDisposition, md.EffectiveDisposition)
 	}
 	if !bytes.Equal(res.Report.JSON(), mustRead(t, filepath.Join(root, "report.json"))) {
 		t.Fatalf("inspect report JSON differs from published report.json")

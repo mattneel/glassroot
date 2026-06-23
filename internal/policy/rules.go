@@ -26,15 +26,16 @@ func (e *Evaluator) evaluateRules(ctx context.Context, delta model.BehavioralDel
 	if err := ctx.Err(); err != nil {
 		return nil, contextErr(err)
 	}
-	if !delta.ExecutionComplete || !delta.EvidenceComplete {
+	incomplete := !delta.ExecutionComplete || !delta.EvidenceComplete
+	if incomplete {
 		f, err := e.makeFinding(findingSpec{ruleID: "GR-OBS-001", severity: model.SeverityHigh, confidence: model.ConfidenceHigh, disposition: model.DispositionFailed, scope: "global-incomplete", limitations: completenessLimitations(delta)})
 		if err != nil {
 			return nil, err
 		}
 		findings = append(findings, f)
 	}
-	if hasSyntheticEvidence(delta) {
-		f, err := e.makeFinding(findingSpec{ruleID: "GR-OBS-001", severity: model.SeverityMedium, confidence: model.ConfidenceHigh, disposition: model.DispositionRequiresReview, scope: "global-synthetic", limitations: []model.Limitation{{ID: "synthetic-evidence", Summary: "Policy evaluation is based on synthetic evidence; it is not target workload behavior."}}})
+	if !incomplete && syntheticContextRequiresReview(delta.EvidenceContext) {
+		f, err := e.makeFinding(findingSpec{ruleID: "GR-OBS-001", severity: model.SeverityMedium, confidence: model.ConfidenceHigh, disposition: model.DispositionRequiresReview, scope: "global-synthetic", limitations: syntheticContextLimitations(delta.EvidenceContext)})
 		if err != nil {
 			return nil, err
 		}
@@ -164,7 +165,7 @@ func summaryForRule(ruleID, scope string) string {
 			return "Observation coverage or execution completeness is insufficient for an adequate strict-profile evaluation."
 		}
 		if scope == "global-synthetic" {
-			return "The policy evaluation is based on synthetic evidence; no target workload behavior is established by that evidence."
+			return "The policy evaluation is based on synthetic evidence or no target code execution; review is required before drawing target-behavior conclusions."
 		}
 		return "Observation coverage or observer-reported state requires review."
 	case "GR-PROC-001":
@@ -197,18 +198,19 @@ func completenessLimitations(delta model.BehavioralDelta) []model.Limitation {
 	return out
 }
 
-func hasSyntheticEvidence(delta model.BehavioralDelta) bool {
-	for _, r := range delta.Records {
-		if r.Source == model.ObservationSourceSyntheticTestGenerated {
-			return true
-		}
-		for _, f := range append(append([]model.DeltaFactSnapshot{}, r.BaseFacts...), r.HeadFacts...) {
-			if f.Source == model.ObservationSourceSyntheticTestGenerated {
-				return true
-			}
-		}
+func syntheticContextRequiresReview(ctx model.EvidenceContext) bool {
+	return ctx.SyntheticEvidence || !ctx.ExecutesTargetCode
+}
+
+func syntheticContextLimitations(ctx model.EvidenceContext) []model.Limitation {
+	out := []model.Limitation{}
+	if ctx.SyntheticEvidence {
+		out = append(out, model.Limitation{ID: "synthetic-evidence", Summary: "Policy evaluation is based on synthetic evidence; it is not target workload behavior."})
 	}
-	return false
+	if !ctx.ExecutesTargetCode {
+		out = append(out, model.Limitation{ID: "synthetic-no-target-execution", Summary: "No target code was executed; absence of ordinary behavioral deltas is not a real workload pass."})
+	}
+	return sortLimitations(out)
 }
 
 func headPositive(rec model.DeltaRecord) bool {

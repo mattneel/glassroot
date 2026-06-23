@@ -1,7 +1,7 @@
 GLASSROOT REPORT
-report-digest: sha256:d89f852b544fb726d41beb1048522503875a888903228d39a647b9621bc126df
+report-digest: sha256:fe73bfd569061146fe3b4b26cf6f17db6b14c06cdb1f85167ed1bcc26c41d116
 run-id: gr12-control
-overall-effective-disposition: passed
+overall-effective-disposition: requires-review
 
 NOTICES
 fake-runner: The fake runner is for tests and is not a security boundary.
@@ -26,6 +26,19 @@ bundle-transaction-valid: true
 manifest-verification: expected-manifest-digest
 
 FINDINGS
+finding: finding-2191475b86b8ff9a9d4d7fb4c894d3debdebf62cb8ae8ba6895a6cae6388a934
+origin: builtin-policy
+rule: GR-OBS-001 v1alpha1
+title: Observation coverage incomplete or weakened
+severity: medium
+confidence: high
+original-disposition: requires-review
+effective-disposition: requires-review
+waived: false
+base-observed: false
+head-observed: false
+finding-limitation: synthetic-evidence:Policy evaluation is based on synthetic evidence; it is not target workload behavior.
+finding-limitation: synthetic-no-target-execution:No target code was executed; absence of ordinary behavioral deltas is not a real workload pass.
 
 DELTAS
 

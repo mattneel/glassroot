@@ -14,6 +14,7 @@ type BehavioralDelta struct {
 	ManifestVerificationMode    string               `json:"manifestVerificationMode,omitempty"`
 	ExecutionComplete           bool                 `json:"executionComplete,omitempty"`
 	EvidenceComplete            bool                 `json:"evidenceComplete,omitempty"`
+	EvidenceContext             EvidenceContext      `json:"evidenceContext"`
 	ComparisonProfile           ComparisonProfile    `json:"comparisonProfile,omitempty"`
 	NormalizationProfileVersion string               `json:"normalizationProfileVersion,omitempty"`
 	ScenarioIDs                 []string             `json:"scenarioIds"`
@@ -21,6 +22,15 @@ type BehavioralDelta struct {
 	Summary                     DeltaSummary         `json:"summary,omitempty"`
 	Records                     []DeltaRecord        `json:"records"`
 	Limitations                 []Limitation         `json:"limitations"`
+}
+
+// EvidenceContext records typed execution/evidence context needed by
+// deterministic comparison and policy even when base/head behavior has no
+// ordinary differences. It is derived from verified normalized evidence rather
+// than renderer notices or prose.
+type EvidenceContext struct {
+	SyntheticEvidence  bool `json:"syntheticEvidence"`
+	ExecutesTargetCode bool `json:"executesTargetCode"`
 }
 
 // DeltaKind names a behavioral difference category.

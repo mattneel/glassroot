@@ -83,6 +83,12 @@ only manifest verification, applied waivers, governance findings, observer
 limitations, and the fixed statement that a passed disposition is not proof of
 safety. Notice text never interpolates hostile data.
 
+Notices are presentation metadata. They do not drive policy disposition. The
+strict policy review finding for complete synthetic/no-target evidence is derived
+earlier from typed `BehavioralDelta` evidence context, so an absence of ordinary
+delta records is not rendered as a passed target-workload assessment merely
+because the report displays notices.
+
 Fake runners and development-only isolation tiers are not described as hardened
 security boundaries. Internal-consistency-only manifest verification is not
 called authentication.

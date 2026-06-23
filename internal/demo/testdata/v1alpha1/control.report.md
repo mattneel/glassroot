@@ -1,7 +1,7 @@
 # Glassroot report
-- Report digest: ` sha256:d89f852b544fb726d41beb1048522503875a888903228d39a647b9621bc126df `
+- Report digest: ` sha256:fe73bfd569061146fe3b4b26cf6f17db6b14c06cdb1f85167ed1bcc26c41d116 `
 - Run ID: ` gr12-control `
-- Overall effective disposition: ` passed `
+- Overall effective disposition: ` requires-review `
 - Manifest verification: ` expected-manifest-digest `
 
 ## Notices
@@ -26,7 +26,22 @@
 - Bundle transaction valid: ` true `
 
 ## Findings
-- Total findings: ` 0 `
+- Total findings: ` 1 `
+
+### Finding
+- Finding ID: ` finding-2191475b86b8ff9a9d4d7fb4c894d3debdebf62cb8ae8ba6895a6cae6388a934 `
+- Origin: ` builtin-policy `
+- Rule: ` GR-OBS-001 v1alpha1 `
+- Title: ` Observation coverage incomplete or weakened `
+- Severity: ` medium `
+- Confidence: ` high `
+- Original disposition: ` requires-review `
+- Effective disposition: ` requires-review `
+- Waived: ` false `
+- Base observed: ` false `
+- Head observed: ` false `
+- ` limitation synthetic-evidence `: ` Policy evaluation is based on synthetic evidence; it is not target workload behavior. `
+- ` limitation synthetic-no-target-execution `: ` No target code was executed; absence of ordinary behavioral deltas is not a real workload pass. `
 
 ## Behavioral delta
 - Total delta records: ` 0 `
