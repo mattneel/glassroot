@@ -1,0 +1,54 @@
+{
+  "schemaVersion": "glassroot.dev/evidence-manifest/v1alpha1",
+  "id": "manifest-run-0001",
+  "runId": "run-0001",
+  "createdAt": "2026-01-02T03:04:11Z",
+  "entries": [
+    {
+      "kind": "event-stream",
+      "revision": "head",
+      "scenarioId": "unit",
+      "path": "head/unit/events.jsonl",
+      "digest": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "sizeBytes": 4096,
+      "mediaType": "application/x-ndjson",
+      "source": "sandbox-runtime-observed",
+      "eventIds": ["evt-000000000001"],
+      "truncated": false,
+      "limitations": []
+    },
+    {
+      "kind": "artifact",
+      "revision": "head",
+      "scenarioId": "unit",
+      "path": "head/unit/artifacts/bin/glassroot",
+      "digest": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "sizeBytes": 9007199254740995,
+      "mediaType": "application/octet-stream",
+      "source": "host-observed",
+      "eventIds": ["evt-000000000001"],
+      "truncated": false,
+      "limitations": []
+    }
+  ],
+  "artifacts": [
+    {
+      "id": "artifact-head-binary",
+      "revision": "head",
+      "scenarioId": "unit",
+      "path": "head/unit/artifacts/bin/glassroot",
+      "digest": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "sizeBytes": 123456,
+      "executable": true,
+      "sourceEventIds": ["evt-000000000001"],
+      "limitations": []
+    }
+  ],
+  "limitations": [
+    {
+      "id": "lim-manifest-fixture",
+      "summary": "Manifest is compatibility data only.",
+      "details": "Digest strings are synthetic and were not computed by this package."
+    }
+  ]
+}

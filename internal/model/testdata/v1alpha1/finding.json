@@ -1,0 +1,28 @@
+{
+  "schemaVersion": "glassroot.dev/finding/v1alpha1",
+  "id": "finding-net-001",
+  "ruleId": "GR-NET-001",
+  "title": "New outbound destination",
+  "severity": "high",
+  "confidence": "high",
+  "disposition": "requires-review",
+  "summary": "The proposed revision attempted a synthetic network connection absent from the base run.",
+  "evidence": [
+    {
+      "digest": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "eventIds": ["evt-000000000001"],
+      "bundlePath": "head/unit/events.jsonl"
+    }
+  ],
+  "scenarioIds": ["unit"],
+  "baseObserved": false,
+  "headObserved": true,
+  "waived": false,
+  "limitations": [
+    {
+      "id": "lim-finding-fixture",
+      "summary": "Finding is compatibility data only.",
+      "details": "Policy evaluation is deferred to a later milestone."
+    }
+  ]
+}

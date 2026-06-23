@@ -1,0 +1,19 @@
+{
+  "schemaVersion": "glassroot.dev/observation-event/v1alpha1",
+  "id": "evt-000000000001",
+  "runId": "run-0001",
+  "revision": "head",
+  "scenarioId": "unit",
+  "sequenceNumber": 9007199254740993,
+  "observedAt": "2026-01-02T03:04:06Z",
+  "source": "network-broker-observed",
+  "kind": "network-connection",
+  "network": {
+    "operation": "connect",
+    "protocol": "tcp",
+    "destinationHost": "updates.example.invalid",
+    "destinationPort": 443,
+    "resolvedAddresses": ["192.0.2.10"],
+    "result": "denied-by-policy"
+  }
+}

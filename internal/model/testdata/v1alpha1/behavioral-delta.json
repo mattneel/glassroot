@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "glassroot.dev/behavioral-delta/v1alpha1",
+  "id": "delta-run-0001",
+  "runId": "run-0001",
+  "base": {
+    "kind": "base",
+    "repository": "https://example.invalid/org/repo.git",
+    "ref": "refs/heads/master",
+    "commitId": "1111111111111111111111111111111111111111",
+    "treeDigest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "head": {
+    "kind": "head",
+    "repository": "https://example.invalid/org/repo.git",
+    "ref": "refs/pull/7/head",
+    "commitId": "2222222222222222222222222222222222222222",
+    "treeDigest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  },
+  "scenarioIds": ["unit"],
+  "records": [
+    {
+      "id": "delta-net-001",
+      "kind": "added-network-connection",
+      "summary": "Head attempted a synthetic TLS connection absent from the base run.",
+      "baseObserved": false,
+      "headObserved": true,
+      "evidence": [
+        {
+          "digest": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+          "eventIds": ["evt-000000000001"],
+          "bundlePath": "head/unit/events.jsonl"
+        }
+      ],
+      "scenarioIds": ["unit"],
+      "limitations": []
+    }
+  ],
+  "limitations": [
+    {
+      "id": "lim-delta-fixture",
+      "summary": "Delta fixture is representative, not comparator output.",
+      "details": "GR-3 does not implement behavioral comparison."
+    }
+  ]
+}

@@ -1,0 +1,111 @@
+{
+  "schemaVersion": "glassroot.dev/report/v1alpha1",
+  "id": "report-run-0001",
+  "runId": "run-0001",
+  "generatedAt": "2026-01-02T03:04:12Z",
+  "base": {
+    "kind": "base",
+    "repository": "https://example.invalid/org/repo.git",
+    "ref": "refs/heads/master",
+    "commitId": "1111111111111111111111111111111111111111",
+    "treeDigest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "head": {
+    "kind": "head",
+    "repository": "https://example.invalid/org/repo.git",
+    "ref": "refs/pull/7/head",
+    "commitId": "2222222222222222222222222222222222222222",
+    "treeDigest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  },
+  "runner": {
+    "name": "glassroot-fake-runner",
+    "version": "v0.0.0-test",
+    "isolationTier": "fake",
+    "freshKernel": false,
+    "brokeredNetwork": false,
+    "processEventCollection": true,
+    "filesystemEventCollection": true,
+    "syscallEventCollection": false,
+    "artifactHashing": true,
+    "snapshotSupport": false
+  },
+  "summary": {
+    "disposition": "requires-review",
+    "totalFindings": 1,
+    "findingsBySeverity": [
+      {"severity": "high", "count": 1}
+    ],
+    "baseScenarioCount": 1,
+    "headScenarioCount": 1,
+    "limitations": [
+      {
+        "id": "lim-report-fixture",
+        "summary": "Report fixture is synthetic compatibility data.",
+        "details": "Rendering is deferred to a later milestone."
+      }
+    ]
+  },
+  "findings": [
+    {
+      "schemaVersion": "glassroot.dev/finding/v1alpha1",
+      "id": "finding-net-001",
+      "ruleId": "GR-NET-001",
+      "title": "New outbound destination",
+      "severity": "high",
+      "confidence": "high",
+      "disposition": "requires-review",
+      "summary": "The proposed revision attempted a synthetic network connection absent from the base run.",
+      "evidence": [
+        {
+          "digest": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+          "eventIds": ["evt-000000000001"],
+          "bundlePath": "head/unit/events.jsonl"
+        }
+      ],
+      "scenarioIds": ["unit"],
+      "baseObserved": false,
+      "headObserved": true,
+      "waived": false,
+      "limitations": []
+    }
+  ],
+  "deltas": [
+    {
+      "id": "delta-net-001",
+      "kind": "added-network-connection",
+      "summary": "Head attempted a synthetic TLS connection absent from the base run.",
+      "baseObserved": false,
+      "headObserved": true,
+      "evidence": [
+        {
+          "digest": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+          "eventIds": ["evt-000000000001"],
+          "bundlePath": "head/unit/events.jsonl"
+        }
+      ],
+      "scenarioIds": ["unit"],
+      "limitations": []
+    }
+  ],
+  "evidence": [
+    {
+      "digest": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "eventIds": ["evt-000000000001"],
+      "bundlePath": "head/unit/events.jsonl"
+    }
+  ],
+  "limitations": [
+    {
+      "id": "lim-report-fixture",
+      "summary": "Report fixture is synthetic compatibility data.",
+      "details": "No report renderer is introduced by GR-3."
+    }
+  ],
+  "attestationMetadata": {
+    "producerName": "glassroot",
+    "producerVersion": "dev",
+    "generatedAt": "2026-01-02T03:04:12Z",
+    "buildCommit": "fixture-build-commit",
+    "notes": ["Descriptive metadata only; no signing or attestation format is introduced in GR-3."]
+  }
+}

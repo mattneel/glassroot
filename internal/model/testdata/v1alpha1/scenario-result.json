@@ -1,0 +1,32 @@
+{
+  "schemaVersion": "glassroot.dev/scenario-result/v1alpha1",
+  "id": "scenario-result-head-unit",
+  "runId": "run-0001",
+  "revision": "head",
+  "scenarioId": "unit",
+  "status": "passed",
+  "startedAt": "2026-01-02T03:04:05Z",
+  "completedAt": "2026-01-02T03:04:10Z",
+  "durationMillis": 5000,
+  "exitCode": 0,
+  "artifacts": [
+    {
+      "id": "artifact-head-binary",
+      "revision": "head",
+      "scenarioId": "unit",
+      "path": "head/unit/artifacts/bin/glassroot",
+      "digest": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "sizeBytes": 123456,
+      "executable": true,
+      "sourceEventIds": ["evt-000000000001"],
+      "limitations": []
+    }
+  ],
+  "limitations": [
+    {
+      "id": "lim-fixture-result",
+      "summary": "Scenario result is synthetic compatibility data.",
+      "details": "No target repository or fixture code was executed to produce this JSON."
+    }
+  ]
+}

@@ -1,0 +1,111 @@
+{
+  "schemaVersion": "glassroot.dev/run-plan/v1alpha1",
+  "id": "run-plan-0001",
+  "runId": "run-0001",
+  "createdAt": "2026-01-02T03:04:05Z",
+  "base": {
+    "kind": "base",
+    "repository": "https://example.invalid/org/repo.git",
+    "ref": "refs/heads/master",
+    "commitId": "1111111111111111111111111111111111111111",
+    "treeDigest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "head": {
+    "kind": "head",
+    "repository": "https://example.invalid/org/repo.git",
+    "ref": "refs/pull/7/head",
+    "commitId": "2222222222222222222222222222222222222222",
+    "treeDigest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  },
+  "revisions": [
+    {
+      "kind": "base",
+      "commit": {
+        "kind": "base",
+        "repository": "https://example.invalid/org/repo.git",
+        "ref": "refs/heads/master",
+        "commitId": "1111111111111111111111111111111111111111",
+        "treeDigest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "materializedTreeDigest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "scenarioIds": ["unit"]
+    },
+    {
+      "kind": "head",
+      "commit": {
+        "kind": "head",
+        "repository": "https://example.invalid/org/repo.git",
+        "ref": "refs/pull/7/head",
+        "commitId": "2222222222222222222222222222222222222222",
+        "treeDigest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      },
+      "materializedTreeDigest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "scenarioIds": ["unit"]
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "unit",
+      "name": "Unit tests",
+      "command": {
+        "argv": ["/bin/sh", "-c", "go test ./..."],
+        "workingDirectory": "/workspace",
+        "environment": [
+          {"name": "CI", "value": "true"}
+        ],
+        "timeoutMillis": 600000
+      },
+      "resourceLimits": {
+        "timeoutMillis": 600000,
+        "memoryBytes": 2147483648,
+        "diskBytes": 4294967296,
+        "cpuMillis": 120000,
+        "processCount": 256
+      },
+      "networkPolicy": {
+        "mode": "deny",
+        "allowed": []
+      },
+      "expectedArtifacts": [
+        {
+          "logicalPath": "bin/glassroot",
+          "required": false,
+          "maxSizeBytes": 52428800
+        }
+      ]
+    }
+  ],
+  "runner": {
+    "name": "glassroot-fake-runner",
+    "version": "v0.0.0-test",
+    "isolationTier": "fake",
+    "freshKernel": false,
+    "brokeredNetwork": false,
+    "processEventCollection": true,
+    "filesystemEventCollection": true,
+    "syscallEventCollection": false,
+    "artifactHashing": true,
+    "snapshotSupport": false
+  },
+  "resourceLimits": {
+    "timeoutMillis": 600000,
+    "memoryBytes": 2147483648,
+    "diskBytes": 4294967296,
+    "cpuMillis": 120000,
+    "processCount": 256
+  },
+  "networkPolicy": {
+    "mode": "deny",
+    "allowed": []
+  },
+  "environment": [
+    {"name": "GLASSROOT_FIXTURE", "value": "true"}
+  ],
+  "limitations": [
+    {
+      "id": "lim-syscall-fixture",
+      "summary": "Syscall-level collection is unavailable in this synthetic fake-runner fixture.",
+      "details": "The fixture records data-only capability facts and does not introduce a runner."
+    }
+  ]
+}
