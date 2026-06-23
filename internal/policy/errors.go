@@ -34,6 +34,21 @@ const (
 	CodeEvaluationTooLarge              ErrorCode = "evaluation-too-large"
 	CodeContextCancelled                ErrorCode = "context-cancelled"
 	CodePolicyTimeout                   ErrorCode = "policy-timeout"
+
+	CodeNilEvaluation          ErrorCode = "nil-evaluation"
+	CodeInvalidEvaluation      ErrorCode = "invalid-evaluation"
+	CodeNilPlan                ErrorCode = "nil-plan"
+	CodeInvalidPlan            ErrorCode = "invalid-plan"
+	CodeEvaluationPlanMismatch ErrorCode = "evaluation-plan-mismatch"
+	CodeTrustedConfigMismatch  ErrorCode = "trusted-config-mismatch"
+	CodeInvalidEvaluatedAt     ErrorCode = "invalid-evaluated-at"
+	CodeWaiverLoadFailed       ErrorCode = "waiver-load-failed"
+	CodeInvalidWaiverState     ErrorCode = "invalid-waiver-state"
+	CodeInvalidOriginalFinding ErrorCode = "invalid-original-finding"
+	CodeFindingTargetMismatch  ErrorCode = "finding-target-mismatch"
+	CodeApplicationLimit       ErrorCode = "application-limit"
+	CodeGovernanceFindingLimit ErrorCode = "governance-finding-limit"
+	CodeApplicationTooLarge    ErrorCode = "application-too-large"
 )
 
 type sentinel ErrorCode

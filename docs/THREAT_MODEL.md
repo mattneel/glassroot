@@ -277,3 +277,38 @@ set. A compromised comparator or policy engine can still produce misleading
 results. GR-10A introduces no rendering, signing, target execution, workspace
 access, evidence-bundle mutation, custom policy language, OPA/Rego/plugin
 support, or sandbox claim.
+
+## Trusted waiver and final policy application boundary (GR-10B)
+
+GR-10B is a trusted transformation over the GR-10A `FrozenEvaluation`, exact
+`pipeline.FrozenPlan`, trusted base configuration result, exact base/head waiver
+revision reads, and explicit `evaluatedAt`. A compromised or incorrect waiver
+applier can hide policy consequences, misapply waivers, or create false
+governance findings. It therefore cross-binds run ID, plan digest, immutable
+base/head commits, effective base pipeline configuration, strict policy profile,
+waiver revisions, and evaluation time before returning an application.
+
+Base `.glassroot/waivers.yaml` content is trusted repository policy input, but it
+may still be malformed, stale, expired, too broad, duplicated, or semantically
+invalid. Invalid base waiver sets apply nothing. Head waiver content is hostile
+proposal data and is never applied or merged with base. Waiver owner and reason
+are untrusted display strings. Broad waivers are unsupported; every waiver targets
+one finding ID and one matching eligible rule ID.
+
+Waiver source reads rely on the GR-6A `RevisionFileSource` contract: exact
+immutable revision reads, no symlink following, no gitlink traversal, no LFS
+fetching, no working-tree fallback, and bounded raw bytes. Operational inability
+to inspect requested waiver revisions fails closed rather than becoming a policy
+finding.
+
+Evaluation time is trusted caller input, not trusted wall-clock proof. A
+compromised clock source or caller can alter active, expired, and not-yet-valid
+waiver decisions. Waivers preserve original findings, severity, confidence,
+evidence, and unwaived disposition; only effective disposition is overlaid.
+Configuration and waiver governance findings cannot be waived.
+
+Application finding IDs and application digests provide deterministic equality
+only. They are not signatures, authorization, authentication, provenance, or
+attestations. GR-10B introduces no rendering, signing, target execution,
+workspace access, artifact/log parsing, custom policy language, OPA/Rego/plugin
+support, or sandbox claim.

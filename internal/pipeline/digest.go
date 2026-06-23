@@ -23,3 +23,6 @@ func planJSONDigestForTest(data []byte) model.Digest {
 	_, _ = h.Write(data)
 	return model.Digest("sha256:" + hex.EncodeToString(h.Sum(nil)))
 }
+
+// DigestJSON computes the domain-separated digest for exact run-plan JSON bytes.
+func DigestJSON(data []byte) model.Digest { return planJSONDigest(data) }

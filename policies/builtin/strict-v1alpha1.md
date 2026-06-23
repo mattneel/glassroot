@@ -1,6 +1,6 @@
 # Built-in policy catalog: strict/v1alpha1
 
-This document describes the fixed GR-10A rule catalog. Production code does not
+This document describes the fixed strict policy catalogs. Production code does not
 parse this file; it is not executable policy text.
 
 ## Emitted rules
@@ -86,10 +86,32 @@ parse this file; it is not executable policy text.
 - Evidence requirements: typed resource facts.
 - Limitations: logs are not parsed for limit inference.
 
-## Reserved rules
+## Governance-stage emitted rules
 
-- `GR-CONFIG-001` — Trusted security configuration changed in head. Reserved for GR-10B.
-- `GR-WAIVER-001` — Waiver added, changed, invalid, or expired. Reserved for GR-10B.
+These rules are emitted by GR-10B in the separate rule-set identity
+`glassroot.dev/governance-rules/strict/v1alpha1`. They do not alter the GR-10A
+built-in rule-set identity `glassroot.dev/builtin-rules/strict/v1alpha1`.
+
+### GR-CONFIG-001 — Trusted security configuration changed in head
+
+- Version: `v1`.
+- Default severity: high for privilege increase, observation weakened, execution definition change, policy change, unknown effect, invalid head config, removed head config, and unsupported head entry; medium for privilege decrease or observation strengthened; low for informational changes.
+- Disposition: requires-review.
+- Confidence: high for the deterministic config comparison state.
+- Triggers: valid semantic `ConfigChange` records and file-level invalid/removed/unsupported head configuration states.
+- Non-triggers: unchanged head config and byte-changed but semantically equivalent config.
+- Evidence requirements: trusted config authority metadata, base/head raw digests, and structured config-change references.
+- Limitations: effective configuration remains trusted base; hostile changed values are not interpolated. This governance finding cannot be waived.
+
+### GR-WAIVER-001 — Waiver governance issue
+
+- Version: `v1`.
+- Default severity/disposition: high/failed for invalid trusted-base waiver documents, unsupported trusted-base entries, duplicate or overly broad targets, and invalid lifetime; medium/requires-review for expired, not-yet-valid, unused, target-mismatched, or ineligible base waivers; high/requires-review for head additions, removals, target or expiry changes, invalid head content, and unsupported head entries; medium/requires-review for head owner, reason, or issued-at changes.
+- Confidence: high for deterministic waiver parsing, lifecycle, and head-assessment facts.
+- Triggers: trusted-base waiver authority issues and head waiver proposals.
+- Non-triggers: an active exact applied waiver by itself, or formatting-only semantic equivalence in head.
+- Evidence requirements: fixed waiver path metadata, base/head raw and semantic waiver digests, structured waiver IDs/change kinds/status records.
+- Limitations: owner and reason are untrusted display data; head proposals are never applied. Governance findings cannot be waived.
 
 Lack of findings does not prove safety. Findings do not establish malicious
-intent. A waived finding in future work must remain present and recoverable.
+intent. A waived finding remains present and recoverable; waiver application records effective disposition separately.

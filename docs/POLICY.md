@@ -197,3 +197,54 @@ base state, annotate findings without deleting them, and emit reserved waiver an
 configuration rules where applicable. GR-11 will render frozen deltas and frozen
 evaluations safely. No findings does not prove safety; it only means this fixed
 rule set did not emit a finding for the supplied delta.
+
+## Final policy application (GR-10B)
+
+GR-10B applies trusted-base waivers after GR-10A. The production application API
+accepts the immutable `FrozenEvaluation`, the exact `pipeline.FrozenPlan`, the
+trusted base configuration load result, a `RevisionFileSource`, and explicit
+`evaluatedAt`. It rejects mismatched run IDs, plan digests, commits, effective
+configuration source, policy profile, evaluation identity, and nonzero legacy
+runner facts.
+
+Final application introduces:
+
+```text
+glassroot.dev/policy-application/v1alpha1
+glassroot.dev/governance-rules/strict/v1alpha1
+```
+
+It preserves `glassroot.dev/builtin-rules/strict/v1alpha1` unchanged. Original
+GR-10A findings remain present with `waived=false` and original disposition.
+Application records a separate effective disposition and optional applied-waiver
+metadata.
+
+Overall effective disposition is `failed` if any effective finding is failed,
+`requires-review` if no failed finding exists and any effective finding requires
+review, and `passed` otherwise, including when every otherwise-review finding is
+explicitly waived. Waived findings still count as findings.
+
+### Governance rules
+
+`GR-CONFIG-001` belongs to the governance rule set and reports trusted head
+configuration changes. It does not mean the head configuration was applied; the
+effective configuration remains trusted base. Valid semantic config changes emit
+one finding per `config.ConfigChange`. Privilege increase, observation weakened,
+execution definition change, policy change, and unknown effects are high
+severity. Privilege decrease and observation strengthened are medium. Informational
+changes are low. Invalid, removed, or unsupported head configuration state is
+high severity. Confidence is high for the configuration comparison fact.
+
+`GR-WAIVER-001` reports waiver governance issues. Invalid or unsupported trusted
+base waiver content, duplicate/broad targets, and invalid lifetime are high and
+failed. Expired, not-yet-valid, unused, target mismatch, and ineligible trusted
+base waivers are medium and require review. Head waiver additions, removals,
+target changes, expiry changes, invalid content, and unsupported entries are
+high and require review; owner, reason, and issued-at changes are medium and
+require review. Formatting-only semantic equivalence is recorded in metadata and
+emits no governance finding.
+
+Neither governance rule can be waived in GR-10B.
+
+See `docs/WAIVERS.md` for the fixed waiver format, expiry boundary, authority
+rules, and strict parser limits.
