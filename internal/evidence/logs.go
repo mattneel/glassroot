@@ -103,6 +103,22 @@ func (c *LogCapture) Write(p []byte) (int, error) {
 	return len(p), nil
 }
 
+func (c *LogCapture) MarkTruncated(observedAtLeast int64) error {
+	if c == nil || c.closed || c.file == nil {
+		return errCode(CodeLogWriteFailed, "log", "truncate", "log capture is closed", nil)
+	}
+	if c.session.state != StateActive {
+		return errCode(CodeInvalidSessionState, "log", "truncate", "session is not active", nil)
+	}
+	if observedAtLeast <= c.observed {
+		observedAtLeast = c.observed + 1
+	}
+	c.observed = observedAtLeast
+	c.truncated = true
+	c.session.evidenceIncomplete = true
+	return nil
+}
+
 func (c *LogCapture) Close() error {
 	if c == nil || c.closed {
 		return nil

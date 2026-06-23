@@ -494,3 +494,40 @@ process may defeat identity reporting or mutate state outside the collector's
 assumptions. GR-13B introduces no execution, CLI behavior, policy decision,
 rendering, Docker API import, evidence writer integration, hardened sandbox,
 signing, authentication, attestation, or provenance claim.
+
+### GR-13C local docker-dev run orchestration
+
+`glassroot run docker-dev` is the first local path that executes target commands.
+It is explicit, local-only, and development-only. The caller supplies a bare Git
+store, exact full base/head commit IDs, an explicit Unix Docker socket, run ID,
+created-at time, evaluated-at time, and the unsafe-development acknowledgement.
+No working tree, symbolic revision, Docker environment, default socket, or target
+content can select those inputs.
+
+The Docker daemon and socket are trusted and privileged. Each attempt receives a
+fresh private materialized workspace as the single writable bind mount. The
+collector binds the workspace before execution, Docker removes the container
+before collection starts, and all post-run names, links, modes, contents, and
+special files are hostile. Logs, Docker responses, artifact logical paths, and
+artifact bytes are hostile evidence data.
+
+Trusted-base configuration is the only execution authority. Head pipeline and
+waiver changes are assessed but cannot alter the effective image, shell, run
+string, resource limits, artifact patterns, comparison ignores, policy profile,
+or waivers. The run path writes evidence, verifies it by expected manifest
+digest, and reconstructs the final report through `inspect`; reports are not
+trusted from in-memory stage output alone.
+
+Incomplete log or artifact capture is explicit and prevents evidence from being
+marked complete. Target failure is data. Docker, collector, evidence, cleanup,
+inspection, rendering, publication, cancellation, and stdout failures are
+infrastructure failures and produce no successful report output before atomic
+publication.
+
+Output publication uses a private sibling staging directory and atomic rename,
+but durability still depends on host filesystem semantics. Same-UID mutation,
+Docker daemon compromise, container escape, kernel compromise, hostile mounts,
+malicious filesystems, cgroup enforcement gaps, output I/O failures, and local
+image behavior remain residual risks. No public webhook may invoke docker-dev,
+and this path introduces no hardened sandbox, provenance, authentication,
+attestation, signing, or safety claim.

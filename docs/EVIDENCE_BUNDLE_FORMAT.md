@@ -62,7 +62,7 @@ Event streams are compact JSONL: exactly one complete JSON object followed by `\
 
 Logs are raw byte prefixes. NUL bytes, invalid UTF-8, CRLF, and terminal escapes are preserved exactly. No textual truncation marker is appended. Truncation is represented in manifest metadata and makes `evidenceComplete` false.
 
-Artifacts are streamed into writer-generated private files, hashed, and stored under `objects/sha256/<first-two>/<digest>`. Duplicate bytes may reference the same object. Over-limit artifacts are omitted rather than stored as misleading truncated binary objects; omission is explicit and makes evidence incomplete.
+Artifacts are streamed into writer-generated private files, hashed, and stored under `objects/sha256/<first-two>/<digest>`. Duplicate bytes may reference the same object. Over-limit artifacts are omitted rather than stored as misleading truncated binary objects; omission is explicit and makes evidence incomplete. GR-13C also records post-run collector omissions for matched symlinks and special files without creating placeholder objects. Artifact records may include source executable/mode metadata established by the collector; evidence object files remain writer-created data files and do not preserve source mode bits.
 
 ## Completion states
 

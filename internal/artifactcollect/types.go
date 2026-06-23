@@ -61,6 +61,7 @@ type ArtifactInput struct {
 	DeclaredSize int64
 	MaxBytes     int64
 	Executable   bool
+	SourceMode   SourceModeFacts
 	Reader       io.Reader
 }
 

@@ -192,8 +192,9 @@ func (w *BoundWorkspace) storeRegularFile(ctx context.Context, vp validatedPlan,
 	if !sameStableIdentity(ent.identity, againID) {
 		return ArtifactResult{}, errCode(CodeFileChanged, "file", logical, "artifact path changed after open", nil)
 	}
+	facts := modeFacts(ent.mode)
 	reader := &hashingReader{r: f, h: sha256.New()}
-	stored, err := sink.StoreArtifact(ctx, ArtifactInput{Attempt: vp.Attempt, LogicalPath: logical, DeclaredSize: ent.size, MaxBytes: maxBytes, Executable: modeFacts(ent.mode).Executable, Reader: reader})
+	stored, err := sink.StoreArtifact(ctx, ArtifactInput{Attempt: vp.Attempt, LogicalPath: logical, DeclaredSize: ent.size, MaxBytes: maxBytes, Executable: facts.Executable, SourceMode: facts, Reader: reader})
 	if err != nil {
 		return ArtifactResult{}, errCode(CodeSinkFailed, "sink", logical, "artifact sink failed", err)
 	}
@@ -235,7 +236,6 @@ func (w *BoundWorkspace) storeRegularFile(ctx context.Context, vp validatedPlan,
 		return ArtifactResult{}, errCode(CodeCloseFailed, "file", logical, "close artifact file", err)
 	}
 	closed = true
-	facts := modeFacts(ent.mode)
 	return ArtifactResult{LogicalPath: logical, Disposition: ArtifactDispositionStored, ContentDigest: digest, SizeBytes: ent.size, KnownSizeBytes: ent.size, Executable: facts.Executable, SourceMode: facts, MatchingRuleIDs: append([]string(nil), ruleIDs...), Limitations: []model.Limitation{}}, nil
 }
 

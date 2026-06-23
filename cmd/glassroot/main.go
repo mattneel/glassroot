@@ -10,6 +10,7 @@ import (
 	"github.com/mattneel/glassroot/internal/config"
 	"github.com/mattneel/glassroot/internal/demo"
 	"github.com/mattneel/glassroot/internal/inspect"
+	"github.com/mattneel/glassroot/internal/localrun"
 	"github.com/mattneel/glassroot/internal/model"
 	"github.com/mattneel/glassroot/internal/report"
 )
@@ -44,9 +45,83 @@ func runWithContext(ctx context.Context, args []string, stdout, stderr io.Writer
 	if len(args) >= 2 && args[0] == "demo" && args[1] == "fake" {
 		return runDemoFake(ctx, args[2:], stdout, stderr)
 	}
+	if len(args) >= 2 && args[0] == "run" && args[1] == "docker-dev" {
+		return runDockerDev(ctx, args[2:], stdout, stderr)
+	}
 
 	printUsage(stderr)
 	return 2
+}
+
+func runDockerDev(ctx context.Context, args []string, stdout, stderr io.Writer) int {
+	parsed, err := localrun.ParseCLIArguments(args)
+	if err != nil {
+		writeLocalRunDiagnostic(stderr, err, true)
+		return 2
+	}
+	if parsed.Help {
+		printRunDockerDevUsage(stdout)
+		return 0
+	}
+	r, err := localrun.New(localrun.DefaultLimits())
+	if err != nil {
+		writeLocalRunDiagnostic(stderr, err, false)
+		return 3
+	}
+	result, err := r.Run(ctx, parsed.Request)
+	if err != nil {
+		writeLocalRunDiagnostic(stderr, err, localrun.IsUsageError(err))
+		if localrun.IsUsageError(err) {
+			return 2
+		}
+		return 3
+	}
+	exitCode, err := inspectDispositionExitCode(result.OverallDisposition)
+	if err != nil {
+		writeLocalRunDiagnostic(stderr, err, false)
+		return 3
+	}
+	out, err := renderLocalRunOutput(ctx, result, parsed.Format)
+	if err != nil {
+		writeLocalRunDiagnostic(stderr, err, false)
+		return 3
+	}
+	if err := writeAll(stdout, out); err != nil {
+		writeLocalRunDiagnostic(stderr, &localrun.Error{Code: localrun.CodeOutputFailed, Stage: "output", Message: "stdout write failed", Err: err}, false)
+		return 3
+	}
+	return exitCode
+}
+
+func renderLocalRunOutput(ctx context.Context, result *localrun.Result, format string) ([]byte, error) {
+	if result == nil || result.Report == nil {
+		return nil, &localrun.Error{Code: localrun.CodeReportRenderFailed, Stage: "render", Message: "missing report"}
+	}
+	switch format {
+	case "terminal":
+		out, err := report.RenderTerminal(ctx, result.Report, report.DefaultRenderLimits())
+		if err != nil {
+			return nil, &localrun.Error{Code: localrun.CodeReportRenderFailed, Stage: "render", Message: "terminal rendering failed", Err: err}
+		}
+		return append([]byte(nil), out.Bytes...), nil
+	case "markdown":
+		out, err := report.RenderMarkdown(ctx, result.Report, report.DefaultRenderLimits())
+		if err != nil {
+			return nil, &localrun.Error{Code: localrun.CodeReportRenderFailed, Stage: "render", Message: "markdown rendering failed", Err: err}
+		}
+		return append([]byte(nil), out.Bytes...), nil
+	case "json":
+		return result.Report.JSON(), nil
+	default:
+		return nil, &localrun.Error{Code: localrun.CodeInvalidRequest, Stage: "render", Message: "invalid output format", Usage: true}
+	}
+}
+
+func writeLocalRunDiagnostic(w io.Writer, err error, includeUsage bool) {
+	_, _ = fmt.Fprintf(w, "glassroot run docker-dev: %s\n", localrun.Diagnostic(err))
+	if includeUsage {
+		printRunDockerDevUsage(w)
+	}
 }
 
 func runDemoFake(ctx context.Context, args []string, stdout, stderr io.Writer) int {
@@ -261,6 +336,7 @@ func printUsage(w io.Writer) {
 	fmt.Fprintln(w, "       glassroot validate [--file PATH]")
 	fmt.Fprintln(w, "       glassroot inspect [flags] <absolute-evidence-directory>")
 	fmt.Fprintln(w, "       glassroot demo fake [flags] <absolute-new-output-directory>")
+	fmt.Fprintln(w, "       glassroot run docker-dev [flags] <absolute-new-output-directory>")
 }
 
 func printInspectUsage(w io.Writer) {
@@ -284,6 +360,22 @@ func printDemoFakeUsage(w io.Writer) {
 	fmt.Fprintln(w, "optional flags:")
 	fmt.Fprintln(w, "  --fixture behavior-change|control   default: behavior-change")
 	fmt.Fprintln(w, "  --format terminal|markdown|json      default: terminal")
+}
+
+func printRunDockerDevUsage(w io.Writer) {
+	fmt.Fprintln(w, "usage: glassroot run docker-dev [flags] <absolute-new-output-directory>")
+	fmt.Fprintln(w, "")
+	fmt.Fprintln(w, "required flags:")
+	fmt.Fprintln(w, "  --git-dir ABSOLUTE_BARE_GIT_DIRECTORY")
+	fmt.Fprintln(w, "  --base-commit FULL_OBJECT_ID")
+	fmt.Fprintln(w, "  --head-commit FULL_OBJECT_ID")
+	fmt.Fprintln(w, "  --docker-socket ABSOLUTE_UNIX_SOCKET")
+	fmt.Fprintln(w, "  --run-id RUN_ID")
+	fmt.Fprintln(w, "  --created-at YYYY-MM-DDTHH:MM:SSZ")
+	fmt.Fprintln(w, "  --evaluated-at YYYY-MM-DDTHH:MM:SSZ")
+	fmt.Fprintln(w, "  --acknowledge-unsafe-development-runner I understand docker-dev is not a security boundary")
+	fmt.Fprintln(w, "optional flags:")
+	fmt.Fprintln(w, "  --format terminal|markdown|json   default: terminal")
 }
 
 func writeDiagnostics(w io.Writer, file string, err error) {

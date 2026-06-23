@@ -9,9 +9,10 @@ then reports observed differences with evidence.
 Glassroot is **pre-alpha**. It is not yet suitable for running hostile or
 untrusted workloads. The repository now includes strict evidence verification,
 normalization, comparison, built-in policy, trusted-base waiver application, safe
-report rendering for existing bundles, the `inspect` CLI, and a deterministic
-fake-runner demo. It still does not include a hardened runner, Docker
-integration, GitHub App, or workload-capable bundle-creation command.
+report rendering for existing bundles, the `inspect` CLI, a deterministic
+fake-runner demo, and an explicitly acknowledged local docker-dev run path for
+trusted fixtures. It still does not include a hardened runner, GitHub App, or
+public workload execution service.
 
 ## Install for development
 
@@ -65,6 +66,30 @@ not run fixture source, does not access a network, and is an M2 demonstration
 only. Synthetic observations are not target-workload observations and are not
 suitable for analyzing hostile workloads. See [docs/DEMO.md](docs/DEMO.md).
 
+Pre-alpha local development execution is available only with an explicit unsafe
+Docker acknowledgement:
+
+```bash
+go run ./cmd/glassroot run docker-dev \
+  --git-dir /control/repos/example.git \
+  --base-commit 1111111111111111111111111111111111111111 \
+  --head-commit 2222222222222222222222222222222222222222 \
+  --docker-socket /absolute/path/to/docker.sock \
+  --run-id local-dev-001 \
+  --created-at 2026-06-23T00:00:00Z \
+  --evaluated-at 2026-06-23T00:30:00Z \
+  --acknowledge-unsafe-development-runner "I understand docker-dev is not a security boundary" \
+  --format terminal \
+  /absolute/path/to/glassroot-local-run
+```
+
+This path executes target commands in development-only Docker containers, uses
+one private materialized workspace per attempt, writes and verifies evidence,
+and reconstructs the report through `inspect`. Docker-dev is not hardened, is
+not suitable for hostile repositories or public pull requests, never pulls an
+image, and does not make a sandbox, provenance, authentication, attestation, or
+safety claim. See [docs/LOCAL_RUN.md](docs/LOCAL_RUN.md).
+
 ## Development
 
 ```bash
@@ -75,15 +100,19 @@ make verify
 
 `make verify` runs formatting, vetting, tests, and a CLI build. The current
 pre-alpha inspect and demo paths intentionally execute no target repository code.
+The local docker-dev path does execute target commands, but only after an exact
+unsafe-development acknowledgement and only for trusted local fixtures.
 
 ## Security posture
 
 Do not use this pre-alpha scaffold to run hostile repositories. `inspect` can
-read already-created evidence bundles, and `demo fake` can create synthetic demo
-fixtures, but neither executes target code or makes a sandbox, provenance,
+read already-created evidence bundles, `demo fake` can create synthetic demo
+fixtures, and `run docker-dev` can execute trusted local fixtures in ordinary
+Docker only after explicit acknowledgement. Docker-dev must not be used for
+hostile repositories or public pull requests and makes no sandbox, provenance,
 authentication, attestation, or safety claim. Future milestones will add
-workload-capable bundle creation and hardened runners. Until those components
-exist and are reviewed, Glassroot makes no hardened-runner security claim.
+hardened runner investigations. Until those components exist and are reviewed,
+Glassroot makes no hardened-runner security claim.
 
 ## License
 

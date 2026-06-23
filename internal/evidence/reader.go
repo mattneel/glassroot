@@ -574,7 +574,7 @@ func (v *verifyContext) verifyArtifacts() error {
 					return errCode(CodeArtifactRefInvalid, "artifact-index", "object", "stored artifact object entry mismatch", nil)
 				}
 				refs[rec.Digest]++
-			case ArtifactDispositionOmittedLimit, ArtifactDispositionFailed:
+			case ArtifactDispositionOmittedLimit, ArtifactDispositionOmittedSymlink, ArtifactDispositionOmittedSpecial, ArtifactDispositionFailed:
 				if rec.Digest != "" || rec.ObjectPath != "" {
 					return errCode(CodeArtifactRefInvalid, "artifact-index", "omitted", "omitted artifact must not reference an object", nil)
 				}
@@ -771,7 +771,7 @@ func (v *verifyContext) verifyTopLevelArtifacts() error {
 }
 
 func artifactRecordEqual(a, b ArtifactRecord) bool {
-	if a.LogicalPath != b.LogicalPath || a.Attempt != b.Attempt || a.Disposition != b.Disposition || a.Digest != b.Digest || a.StoredSizeBytes != b.StoredSizeBytes || a.ObservedAtLeast != b.ObservedAtLeast || a.ObjectPath != b.ObjectPath || a.MediaType != b.MediaType {
+	if a.LogicalPath != b.LogicalPath || a.Attempt != b.Attempt || a.Disposition != b.Disposition || a.Digest != b.Digest || a.StoredSizeBytes != b.StoredSizeBytes || a.ObservedAtLeast != b.ObservedAtLeast || a.ObjectPath != b.ObjectPath || a.MediaType != b.MediaType || a.Executable != b.Executable || a.SourceMode != b.SourceMode {
 		return false
 	}
 	if (a.DeclaredSize == nil) != (b.DeclaredSize == nil) {

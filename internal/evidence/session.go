@@ -298,7 +298,7 @@ func (s *Session) finalizeCaptures() error {
 				return err
 			}
 		}
-		if len(as.artifactRecords) > 0 {
+		if len(as.artifactRecords) > 0 || as.artifactsState == CaptureStateCapturedEmpty || as.artifactsState == CaptureStateOmittedLimit {
 			if err := s.writeArtifactIndex(as); err != nil {
 				return err
 			}

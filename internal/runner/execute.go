@@ -104,6 +104,92 @@ func ExecutePlan(ctx context.Context, plan *pipeline.FrozenPlan, backend Runner,
 	return cloneExecutionResult(state.result), nil
 }
 
+func ExecutePlanWithHooks(ctx context.Context, plan *pipeline.FrozenPlan, backend OutputRunner, requirements Requirements, limits Limits, sink EventSink, hooks AttemptHooks) (ExecutionResult, error) {
+	if err := contextError(ctx, CodeContextCancelled, "execute", "", "context"); err != nil {
+		return ExecutionResult{}, err
+	}
+	if plan == nil {
+		return ExecutionResult{}, errCode(CodeInvalidPlan, "plan", "", "plan", "FrozenPlan is required", nil)
+	}
+	if backend == nil {
+		return ExecutionResult{}, errCode(CodeBackendFailed, "backend", "", "runner", "runner backend is required", nil)
+	}
+	if sink == nil {
+		return ExecutionResult{}, errCode(CodeSinkFailed, "sink", "", "sink", "event sink is required", nil)
+	}
+	limits, err := validateLimits(limits)
+	if err != nil {
+		return ExecutionResult{}, err
+	}
+	requirements, err = validateRequirements(requirements)
+	if err != nil {
+		return ExecutionResult{}, err
+	}
+	doc := plan.Document()
+	if err := validatePlanDocument(doc); err != nil {
+		return ExecutionResult{}, err
+	}
+	attempts, err := expandAttempts(doc, plan.Digest())
+	if err != nil {
+		return ExecutionResult{}, err
+	}
+	if int64(len(attempts)) > limits.MaxAttempts {
+		return ExecutionResult{}, errCode(CodeInvalidPlan, "attempts", "", "count", "attempt count exceeds caller limit", nil)
+	}
+	caps, err := backend.Capabilities(ctx)
+	if err != nil {
+		return ExecutionResult{}, errCode(CodeCapabilitiesFailed, "capabilities", "", "runner", "capability query failed", err)
+	}
+	caps = cloneCapabilities(caps)
+	if requirements.Intent == ExecutionIntentWorkload && caps.SyntheticEvidence && !caps.ExecutesTargetCode {
+		return ExecutionResult{}, errCode(CodeSyntheticRunnerNotAllowed, "capabilities", "", "intent", "synthetic runner cannot satisfy workload execution", nil)
+	}
+	mismatches, err := MatchCapabilities(requirements, caps)
+	if err != nil {
+		return ExecutionResult{}, err
+	}
+	if int64(len(mismatches)) > limits.MaxCapabilityMismatches {
+		return ExecutionResult{}, errCode(CodeCapabilityMismatch, "capabilities", "", "mismatches", "too many capability mismatches", nil)
+	}
+	if len(mismatches) > 0 {
+		return ExecutionResult{}, errCode(CodeCapabilityMismatch, "capabilities", "", string(mismatches[0].Code), fmt.Sprintf("required %s actual %s", mismatches[0].Required, mismatches[0].Actual), nil)
+	}
+	if planAware, ok := any(backend).(PlanAwareRunner); ok {
+		if err := planAware.ValidatePlan(ctx, plan.Digest(), cloneAttemptRequests(attempts), limits); err != nil {
+			return ExecutionResult{}, err
+		}
+	}
+
+	execCtx := ctx
+	var cancel context.CancelFunc
+	if doc.ResourceLimits.TimeoutMillis > 0 {
+		execCtx, cancel = context.WithTimeout(ctx, time.Duration(doc.ResourceLimits.TimeoutMillis)*time.Millisecond)
+		defer cancel()
+	}
+	state := &executionState{limits: limits, sink: sink, result: ExecutionResult{PlanDigest: plan.Digest(), Runner: caps, Attempts: []AttemptResult{}, Limitations: syntheticLimitations(caps)}}
+	for _, attempt := range attempts {
+		if err := contextError(execCtx, CodeRunTimeout, "execute", "", attempt.AttemptID); err != nil {
+			return cloneExecutionResult(state.result), err
+		}
+		attemptCtx := execCtx
+		var attemptCancel context.CancelFunc
+		if attempt.ScenarioTimeoutMillis > 0 {
+			attemptCtx, attemptCancel = context.WithTimeout(execCtx, time.Duration(attempt.ScenarioTimeoutMillis)*time.Millisecond)
+		}
+		result, err := executeAttemptWithHooks(attemptCtx, state, backend, attempt, hooks)
+		if attemptCancel != nil {
+			attemptCancel()
+		}
+		if err != nil {
+			return cloneExecutionResult(state.result), err
+		}
+		state.result.Attempts = append(state.result.Attempts, result)
+	}
+	state.result.TotalEmittedEvents = state.seq
+	state.result.Complete = true
+	return cloneExecutionResult(state.result), nil
+}
+
 func executeAttempt(ctx context.Context, state *executionState, backend Runner, attempt AttemptRequest) (AttemptResult, error) {
 	if err := contextError(ctx, CodeAttemptTimeout, "attempt", attempt.AttemptID, "context"); err != nil {
 		return AttemptResult{}, err
@@ -139,6 +225,114 @@ func executeAttempt(ctx context.Context, state *executionState, backend Runner, 
 		AcceptedEventCount:    sink.count,
 		Limitations:           cloneLimitations(outcome.Limitations),
 	}, nil
+}
+
+func executeAttemptWithHooks(ctx context.Context, state *executionState, backend OutputRunner, attempt AttemptRequest, hooks AttemptHooks) (AttemptResult, error) {
+	if err := contextError(ctx, CodeAttemptTimeout, "attempt", attempt.AttemptID, "context"); err != nil {
+		return AttemptResult{}, err
+	}
+	attempt = cloneAttemptRequest(attempt)
+	sink := &attemptDraftSink{state: state, attempt: attempt}
+	logs := DiscardOutputSink()
+	if hooks != nil {
+		got, err := hooks.BeforeAttempt(ctx, cloneAttemptRequest(attempt))
+		if err != nil {
+			return AttemptResult{}, wrapHookError(err, "before", attempt)
+		}
+		if got != nil {
+			logs = got
+		}
+	}
+	startedAt := deterministicAttemptTime(attempt, 0)
+	if err := sink.Emit(ctx, EventDraft{ObservedAt: startedAt, Source: model.ObservationSourceSandboxRuntimeObserved, Kind: model.ObservationKindScenarioStarted, Scenario: &model.ScenarioObservation{Status: model.ScenarioStatusRunning, StartedAt: &startedAt, DurationMillis: 0}}); err != nil {
+		if hooks != nil {
+			_ = hooks.AbortAttempt(ctx, cloneAttemptRequest(attempt), err)
+		}
+		return AttemptResult{}, err
+	}
+	outcome, err := backend.RunAttemptWithOutput(ctx, cloneAttemptRequest(attempt), sink, logs)
+	if err != nil {
+		if hooks != nil {
+			_ = hooks.AbortAttempt(ctx, cloneAttemptRequest(attempt), err)
+		}
+		return AttemptResult{}, wrapAttemptError(err, attempt)
+	}
+	outcome = cloneOutcome(outcome)
+	if err := validateOutcome(outcome, attempt.ScenarioTimeoutMillis); err != nil {
+		if hooks != nil {
+			_ = hooks.AbortAttempt(ctx, cloneAttemptRequest(attempt), err)
+		}
+		return AttemptResult{}, err
+	}
+	if hooks != nil {
+		after, err := hooks.AfterAttempt(ctx, cloneAttemptRequest(attempt), cloneOutcome(outcome), sink)
+		if err != nil {
+			_ = hooks.AbortAttempt(ctx, cloneAttemptRequest(attempt), err)
+			return AttemptResult{}, wrapHookError(err, "after", attempt)
+		}
+		outcome = cloneOutcome(after)
+		if err := validateOutcome(outcome, attempt.ScenarioTimeoutMillis); err != nil {
+			return AttemptResult{}, err
+		}
+	}
+	completedAt := deterministicAttemptTime(attempt, outcome.DurationMillis)
+	if err := sink.Emit(ctx, EventDraft{ObservedAt: completedAt, Source: model.ObservationSourceSandboxRuntimeObserved, Kind: model.ObservationKindScenarioCompleted, Scenario: &model.ScenarioObservation{Status: scenarioStatus(outcome.Status), CompletedAt: &completedAt, DurationMillis: outcome.DurationMillis}}); err != nil {
+		return AttemptResult{}, err
+	}
+	return AttemptResult{
+		AttemptID:             attempt.AttemptID,
+		Revision:              attempt.Revision,
+		ScenarioID:            attempt.ScenarioID,
+		Repetition:            attempt.Repetition,
+		Outcome:               outcome,
+		FirstAcceptedSequence: sink.firstSeq,
+		LastAcceptedSequence:  sink.lastSeq,
+		AcceptedEventCount:    sink.count,
+		Limitations:           cloneLimitations(outcome.Limitations),
+	}, nil
+}
+
+func wrapAttemptError(err error, attempt AttemptRequest) error {
+	if errors.Is(err, context.Canceled) {
+		return errCode(CodeContextCancelled, "attempt", attempt.AttemptID, "context", "context cancelled", err)
+	}
+	if errors.Is(err, context.DeadlineExceeded) {
+		return errCode(CodeAttemptTimeout, "attempt", attempt.AttemptID, "context", "attempt timeout", err)
+	}
+	var rerr *Error
+	if errors.As(err, &rerr) {
+		return err
+	}
+	return errCode(CodeBackendFailed, "attempt", attempt.AttemptID, "runner", "backend failed", err)
+}
+
+func wrapHookError(err error, stage string, attempt AttemptRequest) error {
+	if errors.Is(err, context.Canceled) {
+		return errCode(CodeContextCancelled, stage, attempt.AttemptID, "context", "context cancelled", err)
+	}
+	if errors.Is(err, context.DeadlineExceeded) {
+		return errCode(CodeAttemptTimeout, stage, attempt.AttemptID, "context", "attempt timeout", err)
+	}
+	var rerr *Error
+	if errors.As(err, &rerr) {
+		return err
+	}
+	return errCode(CodeBackendFailed, stage, attempt.AttemptID, "hook", "attempt hook failed", err)
+}
+
+func scenarioStatus(status AttemptStatus) model.ScenarioStatus {
+	switch status {
+	case AttemptStatusSucceeded:
+		return model.ScenarioStatusPassed
+	case AttemptStatusFailed:
+		return model.ScenarioStatusFailed
+	case AttemptStatusTimedOut:
+		return model.ScenarioStatusTimedOut
+	case AttemptStatusResourceLimited:
+		return model.ScenarioStatusIncomplete
+	default:
+		return model.ScenarioStatusError
+	}
 }
 
 type attemptDraftSink struct {

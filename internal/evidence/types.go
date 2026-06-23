@@ -54,9 +54,11 @@ const (
 type ArtifactDisposition string
 
 const (
-	ArtifactDispositionStored       ArtifactDisposition = "stored"
-	ArtifactDispositionOmittedLimit ArtifactDisposition = "omitted-limit"
-	ArtifactDispositionFailed       ArtifactDisposition = "failed"
+	ArtifactDispositionStored         ArtifactDisposition = "stored"
+	ArtifactDispositionOmittedLimit   ArtifactDisposition = "omitted-limit"
+	ArtifactDispositionOmittedSymlink ArtifactDisposition = "omitted-symlink"
+	ArtifactDispositionOmittedSpecial ArtifactDisposition = "omitted-special"
+	ArtifactDispositionFailed         ArtifactDisposition = "failed"
 )
 
 type FailureCategory string
@@ -164,6 +166,8 @@ type ArtifactRecord struct {
 	ObservedAtLeast int64               `json:"observedBytesAtLeast,omitempty"`
 	ObjectPath      string              `json:"objectPath,omitempty"`
 	MediaType       string              `json:"mediaType,omitempty"`
+	Executable      bool                `json:"executable,omitempty"`
+	SourceMode      uint32              `json:"sourceMode,omitempty"`
 	Limitations     []model.Limitation  `json:"limitations"`
 }
 
@@ -174,6 +178,20 @@ type ArtifactInput struct {
 	MaxBytes     int64
 	Reader       io.Reader
 	MediaType    string
+	Executable   bool
+	SourceMode   uint32
+}
+
+type ArtifactOmissionInput struct {
+	Attempt         AttemptKey
+	LogicalPath     string
+	Disposition     ArtifactDisposition
+	DeclaredSize    *int64
+	ObservedAtLeast int64
+	MediaType       string
+	Executable      bool
+	SourceMode      uint32
+	Limitations     []model.Limitation
 }
 
 type ArtifactCaptureResult = ArtifactRecord

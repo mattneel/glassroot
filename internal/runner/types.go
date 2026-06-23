@@ -27,8 +27,19 @@ type Runner interface {
 	RunAttempt(context.Context, AttemptRequest, DraftSink) (AttemptOutcome, error)
 }
 
+type OutputRunner interface {
+	Capabilities(context.Context) (model.RunnerCapabilities, error)
+	RunAttemptWithOutput(context.Context, AttemptRequest, DraftSink, AttemptOutputSink) (AttemptOutcome, error)
+}
+
 type PlanAwareRunner interface {
 	ValidatePlan(context.Context, model.Digest, []AttemptRequest, Limits) error
+}
+
+type AttemptHooks interface {
+	BeforeAttempt(context.Context, AttemptRequest) (AttemptOutputSink, error)
+	AfterAttempt(context.Context, AttemptRequest, AttemptOutcome, DraftSink) (AttemptOutcome, error)
+	AbortAttempt(context.Context, AttemptRequest, error) error
 }
 
 type DraftSink interface {

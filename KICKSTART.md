@@ -1177,16 +1177,25 @@ Acceptance criteria:
 
 Acceptance criteria:
 
-- adds `glassroot run` with explicit docker-dev and unsafe acknowledgement;
+- adds `glassroot run docker-dev`;
+- requires the exact unsafe-development acknowledgement;
 - accepts an explicit local Unix Docker socket and exact Git commits;
+- uses a fixed local docker-dev platform profile with no widening CLI flags;
 - creates a separate fresh materialized workspace for every attempt;
 - binds every workspace to the Docker runner and artifact collector before
   execution;
-- bridges bounded stdout/stderr and artifacts into evidence.Session;
-- produces, verifies, inspects, and renders a complete development-only report;
-- cleans all containers, workspaces, and partial output;
+- bridges bounded stdout/stderr and safe post-run artifacts into evidence.Session;
+- records complete or explicitly incomplete evidence for log/artifact limits;
+- strictly verifies the bundle and reconstructs reports through `glassroot inspect`;
+- atomically publishes `run.json`, `evidence`, and all report formats;
+- exposes stable exit codes;
+- cleans containers, workspaces, collector handles, evidence staging, and partial output;
 - never falls back to host execution or chooses docker-dev implicitly;
 - remains local-only and refuses public webhook use.
+
+M3 implementation is complete after ordinary verification. M3 runtime validation
+remains pending until the gated real-Docker integration suite passes with a
+recorded preloaded immutable local image.
 
 ### GR-14: gVisor technical spike
 

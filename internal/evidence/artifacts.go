@@ -36,7 +36,7 @@ func (s *Session) AddArtifact(ctx context.Context, input ArtifactInput) (Artifac
 	}
 	s.artifactLogical[logicalKey] = struct{}{}
 	if len(as.artifactRecords) >= s.writer.limits.MaxArtifactsPerAttempt || len(s.artifactRecords) >= s.writer.limits.MaxArtifactsPerBundle {
-		rec := ArtifactRecord{LogicalPath: input.LogicalPath, Attempt: input.Attempt, Disposition: ArtifactDispositionOmittedLimit, DeclaredSize: cloneInt64Ptr(input.DeclaredSize), ObservedAtLeast: 0, Limitations: []model.Limitation{{ID: "artifact-omitted-limit", Summary: "artifact count exceeds capture limit"}}}
+		rec := ArtifactRecord{LogicalPath: input.LogicalPath, Attempt: input.Attempt, Disposition: ArtifactDispositionOmittedLimit, DeclaredSize: cloneInt64Ptr(input.DeclaredSize), ObservedAtLeast: 0, MediaType: input.MediaType, Executable: input.Executable, SourceMode: input.SourceMode, Limitations: []model.Limitation{{ID: "artifact-omitted-limit", Summary: "artifact count exceeds capture limit"}}}
 		return s.recordArtifact(as, rec)
 	}
 	max := input.MaxBytes
@@ -48,11 +48,11 @@ func (s *Session) AddArtifact(ctx context.Context, input ArtifactInput) (Artifac
 		max = totalRemaining
 	}
 	if max <= 0 {
-		rec := ArtifactRecord{LogicalPath: input.LogicalPath, Attempt: input.Attempt, Disposition: ArtifactDispositionOmittedLimit, DeclaredSize: cloneInt64Ptr(input.DeclaredSize), ObservedAtLeast: 0, Limitations: []model.Limitation{{ID: "artifact-omitted-limit", Summary: "total artifact byte limit exhausted"}}}
+		rec := ArtifactRecord{LogicalPath: input.LogicalPath, Attempt: input.Attempt, Disposition: ArtifactDispositionOmittedLimit, DeclaredSize: cloneInt64Ptr(input.DeclaredSize), ObservedAtLeast: 0, MediaType: input.MediaType, Executable: input.Executable, SourceMode: input.SourceMode, Limitations: []model.Limitation{{ID: "artifact-omitted-limit", Summary: "total artifact byte limit exhausted"}}}
 		return s.recordArtifact(as, rec)
 	}
 	if input.DeclaredSize != nil && *input.DeclaredSize > max {
-		rec := ArtifactRecord{LogicalPath: input.LogicalPath, Attempt: input.Attempt, Disposition: ArtifactDispositionOmittedLimit, DeclaredSize: cloneInt64Ptr(input.DeclaredSize), ObservedAtLeast: 0, Limitations: []model.Limitation{{ID: "artifact-omitted-limit", Summary: "artifact declared size exceeds capture limit"}}}
+		rec := ArtifactRecord{LogicalPath: input.LogicalPath, Attempt: input.Attempt, Disposition: ArtifactDispositionOmittedLimit, DeclaredSize: cloneInt64Ptr(input.DeclaredSize), ObservedAtLeast: 0, MediaType: input.MediaType, Executable: input.Executable, SourceMode: input.SourceMode, Limitations: []model.Limitation{{ID: "artifact-omitted-limit", Summary: "artifact declared size exceeds capture limit"}}}
 		return s.recordArtifact(as, rec)
 	}
 
@@ -69,7 +69,7 @@ func (s *Session) AddArtifact(ctx context.Context, input ArtifactInput) (Artifac
 	if overLimit {
 		_ = f.Close()
 		_ = s.root.Remove(tmp)
-		rec := ArtifactRecord{LogicalPath: input.LogicalPath, Attempt: input.Attempt, Disposition: ArtifactDispositionOmittedLimit, DeclaredSize: cloneInt64Ptr(input.DeclaredSize), ObservedAtLeast: observed, Limitations: []model.Limitation{{ID: "artifact-omitted-limit", Summary: "artifact exceeded capture limit"}}}
+		rec := ArtifactRecord{LogicalPath: input.LogicalPath, Attempt: input.Attempt, Disposition: ArtifactDispositionOmittedLimit, DeclaredSize: cloneInt64Ptr(input.DeclaredSize), ObservedAtLeast: observed, MediaType: input.MediaType, Executable: input.Executable, SourceMode: input.SourceMode, Limitations: []model.Limitation{{ID: "artifact-omitted-limit", Summary: "artifact exceeded capture limit"}}}
 		return s.recordArtifact(as, rec)
 	}
 	if err := syncFile(f, s.writer.hooks); err != nil {
@@ -103,8 +103,59 @@ func (s *Session) AddArtifact(ctx context.Context, input ArtifactInput) (Artifac
 		_ = s.root.Remove(tmp)
 	}
 	s.totalArtifactBytes += stored
-	rec := ArtifactRecord{LogicalPath: input.LogicalPath, Attempt: input.Attempt, Disposition: ArtifactDispositionStored, Digest: digest, StoredSizeBytes: stored, DeclaredSize: cloneInt64Ptr(input.DeclaredSize), ObjectPath: objectPath, MediaType: input.MediaType, Limitations: []model.Limitation{}}
+	rec := ArtifactRecord{LogicalPath: input.LogicalPath, Attempt: input.Attempt, Disposition: ArtifactDispositionStored, Digest: digest, StoredSizeBytes: stored, DeclaredSize: cloneInt64Ptr(input.DeclaredSize), ObjectPath: objectPath, MediaType: input.MediaType, Executable: input.Executable, SourceMode: input.SourceMode, Limitations: []model.Limitation{}}
 	return s.recordArtifact(as, rec)
+}
+
+func (s *Session) RecordArtifactOmission(ctx context.Context, input ArtifactOmissionInput) (ArtifactCaptureResult, error) {
+	if err := s.ensureActive("artifact"); err != nil {
+		return ArtifactRecord{}, err
+	}
+	if err := ctx.Err(); err != nil {
+		return ArtifactRecord{}, s.fail(contextErr(err))
+	}
+	as, err := s.attemptForKey(input.Attempt)
+	if err != nil {
+		return ArtifactRecord{}, err
+	}
+	switch input.Disposition {
+	case ArtifactDispositionOmittedLimit, ArtifactDispositionOmittedSymlink, ArtifactDispositionOmittedSpecial, ArtifactDispositionFailed:
+	default:
+		return ArtifactRecord{}, errCode(CodeInvalidArtifact, "artifact", "disposition", "artifact omission disposition is invalid", nil)
+	}
+	if err := ValidateLogicalArtifactPath(input.LogicalPath); err != nil {
+		return ArtifactRecord{}, err
+	}
+	logicalKey := attemptKeyString(input.Attempt) + "\x00" + input.LogicalPath
+	if _, ok := s.artifactLogical[logicalKey]; ok {
+		return ArtifactRecord{}, errCode(CodeDuplicateArtifact, "artifact", "logical-path", "duplicate logical artifact path", nil)
+	}
+	if len(as.artifactRecords) >= s.writer.limits.MaxArtifactsPerAttempt || len(s.artifactRecords) >= s.writer.limits.MaxArtifactsPerBundle {
+		return ArtifactRecord{}, errCode(CodeArtifactLimit, "artifact", "count", "artifact omission record count exceeds capture limit", nil)
+	}
+	s.artifactLogical[logicalKey] = struct{}{}
+	rec := ArtifactRecord{LogicalPath: input.LogicalPath, Attempt: input.Attempt, Disposition: input.Disposition, DeclaredSize: cloneInt64Ptr(input.DeclaredSize), ObservedAtLeast: input.ObservedAtLeast, MediaType: input.MediaType, Executable: input.Executable, SourceMode: input.SourceMode, Limitations: cloneLimitations(input.Limitations)}
+	if rec.Limitations == nil || len(rec.Limitations) == 0 {
+		rec.Limitations = []model.Limitation{{ID: string(input.Disposition), Summary: "artifact was not stored"}}
+	}
+	return s.recordArtifact(as, rec)
+}
+
+func (s *Session) MarkArtifactCollectionComplete(ctx context.Context, key AttemptKey) error {
+	if err := s.ensureActive("artifact"); err != nil {
+		return err
+	}
+	if err := ctx.Err(); err != nil {
+		return s.fail(contextErr(err))
+	}
+	as, err := s.attemptForKey(key)
+	if err != nil {
+		return err
+	}
+	if as.artifactsState == CaptureStateNotProvided {
+		as.artifactsState = CaptureStateCapturedEmpty
+	}
+	return nil
 }
 
 func (s *Session) createTempObject() (string, *os.File, error) {
@@ -160,7 +211,7 @@ func (s *Session) recordArtifact(as *attemptState, rec ArtifactRecord) (Artifact
 	as.artifactRecords = append(as.artifactRecords, cloneArtifactRecord(rec))
 	s.artifactRecords = append(s.artifactRecords, cloneArtifactRecord(rec))
 	as.artifactsState = CaptureStateCaptured
-	if rec.Disposition == ArtifactDispositionOmittedLimit || rec.Disposition == ArtifactDispositionFailed {
+	if rec.Disposition == ArtifactDispositionOmittedLimit || rec.Disposition == ArtifactDispositionOmittedSymlink || rec.Disposition == ArtifactDispositionOmittedSpecial || rec.Disposition == ArtifactDispositionFailed {
 		as.artifactsState = CaptureStateOmittedLimit
 		s.evidenceIncomplete = true
 	}
