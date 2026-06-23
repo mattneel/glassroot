@@ -90,6 +90,11 @@ not suitable for hostile repositories or public pull requests, never pulls an
 image, and does not make a sandbox, provenance, authentication, attestation, or
 safety claim. See [docs/LOCAL_RUN.md](docs/LOCAL_RUN.md).
 
+GR-14 includes a gVisor runtime-monitoring technical spike for a controlled
+trusted fixture. It is not a production runner, adds no `glassroot run gvisor`
+command, and makes no hardened-sandbox claim. See
+[docs/GVISOR_SPIKE.md](docs/GVISOR_SPIKE.md).
+
 ## Development
 
 ```bash

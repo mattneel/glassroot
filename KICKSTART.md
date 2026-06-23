@@ -1197,15 +1197,25 @@ M3 implementation is complete after ordinary verification. M3 runtime validation
 remains pending until the gated real-Docker integration suite passes with a
 recorded preloaded immutable local image.
 
-### GR-14: gVisor technical spike
+### GR-14: gVisor runtime-monitoring technical spike
 
 Acceptance criteria:
 
-- document installation and runtime prerequisites;
-- run a controlled fixture under gVisor;
-- capture at least process lifecycle events through supported runtime monitoring;
-- document unsupported behavior and observation gaps;
-- produce an ADR recommending the production integration shape.
+- pins an exact `runsc` release and records binary SHA-512 expectations;
+- detects Linux, architecture, platform, Docker runtime, image, and monitor prerequisites;
+- uses a controlled trusted fixture only;
+- configures runtime monitoring at sandbox initialization;
+- decodes hostile remote-monitor input under explicit bounds;
+- captures container start, process creation, exec, and exit lifecycle records in replay/unit tests;
+- makes dropped events, unknown messages, and observation gaps explicit;
+- compares Docker runtime, containerd shim, direct runsc, and dedicated worker integration shapes;
+- records an ADR production recommendation;
+- provides gated runtime validation without requiring it in ordinary tests;
+- adds no production gVisor runner, public execution path, or hardened claim.
+
+Implementation is present. Runtime validation remains pending until the gated
+live fixture runs with the pinned `runsc`, dedicated Docker runtime, private
+monitor socket, and immutable local fixture image. M4 remains incomplete.
 
 ### GR-15: GitHub App design spike
 

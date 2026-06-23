@@ -531,3 +531,33 @@ malicious filesystems, cgroup enforcement gaps, output I/O failures, and local
 image behavior remain residual risks. No public webhook may invoke docker-dev,
 and this path introduces no hardened sandbox, provenance, authentication,
 attestation, signing, or safety claim.
+
+
+## gVisor runtime-monitoring spike boundary (GR-14)
+
+GR-14 is a technical spike, not a production runner. It does not add `glassroot
+run gvisor`, does not change any capability to `hardened-container`, and does
+not authorize public or hostile pull-request execution.
+
+The controlled fixture is trusted Glassroot-controlled code. The Docker daemon,
+dedicated runtime configuration, pinned `runsc` binary, private monitor socket
+parent, and host are trusted prerequisites for the live spike. The spike treats
+gVisor's Sentry as untrusted: runtime-monitor messages may be malformed, false,
+incomplete, duplicated, delayed, or dropped. The monitor runs outside the sandbox
+and accepts only bounded lifecycle fields from a private Unix `SOCK_SEQPACKET`
+remote endpoint.
+
+Runtime and monitor versions are tightly coupled. The spike pins
+`release-20260615.0` and records the exact commit and expected binary hash, but a
+version match is not authentication or proof that observations are truthful.
+Trace-point selection determines visibility. The spike has no independent
+host-side event cross-check, no comprehensive filesystem observer, no external
+egress broker, no all-syscall session, and no authenticated evidence transport.
+Dropped events make observation incomplete. Unknown trace-point types never
+become known process facts.
+
+A compromised Sentry, monitor, Docker daemon, `runsc`, host kernel, runtime
+configuration, or control plane can produce misleading results or escape the
+spike assumptions. A successful controlled fixture run does not prove hardened
+isolation, image safety, host safety, provenance, authentication, attestation, or
+public-repository eligibility.

@@ -177,6 +177,7 @@ func (c *Client) CreateContainer(ctx context.Context, spec ContainerSpec) (Creat
 	init := spec.Init
 	pids := spec.Resources.PidsLimit
 	host := &containerapi.HostConfig{
+		Runtime:         spec.Runtime,
 		Binds:           bindStrings(spec.Binds),
 		LogConfig:       containerapi.LogConfig{Type: spec.LogDriver},
 		NetworkMode:     containerapi.NetworkMode(spec.NetworkMode),
@@ -339,6 +340,7 @@ func specFromInspect(host *containerapi.HostConfig, cfg *containerapi.Config) Co
 		spec.NetworkDisabled = cfg.NetworkDisabled
 	}
 	if host != nil {
+		spec.Runtime = host.Runtime
 		spec.NetworkMode = string(host.NetworkMode)
 		spec.Privileged = host.Privileged
 		spec.ReadOnlyRootfs = host.ReadonlyRootfs

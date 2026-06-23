@@ -1,7 +1,7 @@
 GO ?= go
 GOFMT ?= gofmt
 
-.PHONY: fmt fmt-check vet lint test test-race test-integration schema-check test-fuzz-seeds test-gitstore test-gitstore-fuzz-seeds test-materialize test-materialize-fuzz-seeds test-pipeline test-pipeline-fuzz-seeds test-runner test-runner-fuzz-seeds test-evidence test-evidence-fuzz-seeds test-evidence-reader test-evidence-reader-fuzz-seeds test-observe test-observe-fuzz-seeds test-compare test-compare-fuzz-seeds test-policy test-policy-fuzz-seeds test-waiver test-waiver-fuzz-seeds test-policy-application test-report test-report-fuzz-seeds test-inspect test-inspect-fuzz-seeds test-demo test-demo-fuzz-seeds demo-golden-check test-dockerengine test-dockerdev test-dockerdev-fuzz-seeds test-dockerdev-integration test-artifactcollect test-artifactcollect-fuzz-seeds test-localrun test-localrun-fuzz-seeds test-localrun-integration build generate verify
+.PHONY: fmt fmt-check vet lint test test-race test-integration schema-check test-fuzz-seeds test-gitstore test-gitstore-fuzz-seeds test-materialize test-materialize-fuzz-seeds test-pipeline test-pipeline-fuzz-seeds test-runner test-runner-fuzz-seeds test-evidence test-evidence-fuzz-seeds test-evidence-reader test-evidence-reader-fuzz-seeds test-observe test-observe-fuzz-seeds test-compare test-compare-fuzz-seeds test-policy test-policy-fuzz-seeds test-waiver test-waiver-fuzz-seeds test-policy-application test-report test-report-fuzz-seeds test-inspect test-inspect-fuzz-seeds test-demo test-demo-fuzz-seeds demo-golden-check test-dockerengine test-dockerdev test-dockerdev-fuzz-seeds test-dockerdev-integration test-artifactcollect test-artifactcollect-fuzz-seeds test-localrun test-localrun-fuzz-seeds test-localrun-integration test-gvisor-monitor test-gvisor-spike test-gvisor-spike-fuzz-seeds test-gvisor-spike-integration build generate verify
 
 fmt:
 	$(GOFMT) -w .
@@ -83,7 +83,7 @@ build:
 generate:
 	$(GO) generate ./...
 
-verify: fmt-check vet test schema-check build
+verify: fmt-check vet test schema-check test-gvisor-monitor build
 
 
 test-evidence-reader:
@@ -175,3 +175,19 @@ test-localrun-fuzz-seeds:
 
 test-localrun-integration:
 	GLASSROOT_LOCALRUN_INTEGRATION=1 $(GO) test ./internal/localrun -run TestLocalRunIntegration -count=1
+
+
+test-gvisor-monitor:
+	cd tools/gvisormonitor && $(GO) test ./... -count=1
+
+test-gvisor-spike:
+	$(GO) test ./internal/gvisorspike -count=1
+
+test-gvisor-spike-fuzz-seeds:
+	$(GO) test ./internal/gvisorspike -run 'FuzzBuildPodInitConfiguration|FuzzApplyProcessLifecycleEvent' -count=1
+	cd tools/gvisormonitor && $(GO) test ./internal/protocol -run FuzzDecodeRemoteEnvelope -count=1
+	cd tools/gvisormonitor && $(GO) test ./internal/convert -run FuzzConvertGVisorTracePoint -count=1
+	cd tools/gvisormonitor && $(GO) test ./internal/monitor -run FuzzApplyProcessLifecycleEvent -count=1
+
+test-gvisor-spike-integration:
+	$(GO) test -v ./internal/gvisorspike -run TestGVisorSpikeIntegration -count=1

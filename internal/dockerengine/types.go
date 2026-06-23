@@ -55,6 +55,7 @@ type TmpfsMount struct {
 
 type ContainerSpec struct {
 	Name                string
+	Runtime             string
 	Image               string
 	Entrypoint          []string
 	Command             []string
