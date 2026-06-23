@@ -1240,12 +1240,21 @@ implemented, runtime-validated, and independently reviewed.
 
 Acceptance criteria:
 
-- adds bounded HTTP intake;
-- verifies raw-body HMAC signatures;
-- persists a durable inbox/outbox;
-- handles replay and delivery conflicts;
-- has no GitHub API credentials;
-- performs no source fetch or execution.
+- serves one bounded GitHub webhook endpoint over a private Unix socket;
+- loads only current/previous webhook secrets from protected files;
+- verifies exact raw-body HMAC-SHA256 before JSON parsing;
+- rejects duplicate required headers and ambiguous request formats;
+- persists minimal typed projections rather than raw webhook bodies;
+- atomically commits inbox and outbox state before returning 202;
+- duplicate deliveries are idempotent;
+- delivery-ID/body or event conflicts fail visibly;
+- durable outbox leasing supports at-least-once controller processing;
+- receiver has no App private key, installation token, source access, worker scheduling, or execution capability;
+- no public PR execution occurs.
+
+GR-15A implementation is present. It does not mark M5 complete, does not make
+public execution eligible, and does not change GR-14 or M3 runtime-validation
+status.
 
 ### GR-15B: Controller, credential broker, and source ingestion
 

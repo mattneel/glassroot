@@ -603,3 +603,37 @@ Public execution remains prohibited until a hardened runner and worker boundary
 are implemented, runtime-validated, and independently reviewed. GR-15 introduces
 no signing, provenance, attestation, authentication, sandbox, safety, webhook
 freshness, or exactly-once delivery claim.
+
+## GitHub webhook receiver and inbox (GR-15A)
+
+GR-15A implements only the receiver/inbox boundary. The receiver holds the
+GitHub webhook secret and no App private key, installation token, OAuth token,
+source credential, publisher credential, or worker credential. It listens on a
+private Unix socket behind a deployment-owned TLS reverse proxy. The proxy and
+local filesystem are trusted to preserve exact raw request bytes and required
+headers; proxy source IP and forwarded identity headers are not authentication.
+
+Webhook HMAC validation proves possession of the shared secret for the exact raw
+body. Signed payload content remains hostile. Headers other than the signature
+are not independent trust roots and are cross-checked against the typed payload
+shape before persistence. Payloads may be duplicated, delayed, missing, or out of
+order. Delivery IDs are replay keys, not authentication.
+
+The receiver verifies signatures before JSON parsing, persists only minimal typed
+projections and receipts, and never persists raw payloads, signature headers,
+secrets, PR title/body, branch names, labels, comments, commit messages, user
+names, URLs, patch text, or remote IP. Unsupported signed events/actions may be
+recorded as ignored; they do not create controller work.
+
+The SQLite database and state directory are trusted control-plane state. Database
+corruption, state-directory compromise, malicious filesystems, network
+filesystems, or kernel compromise can forge, drop, reorder, or lose deliveries.
+HTTP 202 is issued only after the inbox/outbox transaction commits under the
+documented SQLite WAL and synchronous FULL durability contract. Processing
+remains at-least-once; no exactly-once delivery, webhook freshness, source
+safety, authentication, attestation, or execution eligibility claim is added.
+
+The outbox is a future controller handoff only. GR-15A does not call GitHub APIs,
+does not fetch source, does not mint tokens, does not schedule workers directly,
+does not publish Check Runs, and does not execute target code. Public PR
+execution remains prohibited.
