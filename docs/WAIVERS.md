@@ -79,7 +79,7 @@ Governance findings cannot be waived by the same waiver file.
 Waiver IDs are ASCII and match `[a-z][a-z0-9._-]{0,63}`. IDs and targets must be
 unique. Owner is required, 1-256 bytes, no controls, and is not interpreted as
 authorization. Reason is required, 1-1024 bytes, no controls, and remains hostile
-repository-authored display data for GR-11.
+repository-authored display data for GR-11A.
 
 ## Time and expiry
 
@@ -121,7 +121,7 @@ authentication, authorization, provenance, or attestation.
 
 ## Rendering responsibility
 
-Waiver owner and reason strings remain untrusted display data. GR-11 must render
+Waiver owner and reason strings remain untrusted display data. GR-11A must render
 waiver metadata, findings, and evidence references safely. A waiver does not
 prove behavior is safe, does not authorize an author, and does not hide the
 original finding.

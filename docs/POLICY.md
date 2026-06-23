@@ -192,11 +192,12 @@ failures return no frozen evaluation; findings are not silently truncated.
 
 ## Waivers and future work
 
-GR-10A does not load or apply waivers. GR-10B will load waivers only from trusted
-base state, annotate findings without deleting them, and emit reserved waiver and
-configuration rules where applicable. GR-11 will render frozen deltas and frozen
-evaluations safely. No findings does not prove safety; it only means this fixed
-rule set did not emit a finding for the supplied delta.
+GR-10A does not load or apply waivers. GR-10B loads waivers only from trusted
+base state, annotates findings without deleting them, and emits waiver and
+configuration governance rules where applicable. GR-11A composes the final
+policy application with the behavioral delta and verified bundle, then renders
+the frozen report safely. No findings does not prove safety; it only means this
+fixed rule set did not emit a finding for the supplied delta.
 
 ## Final policy application (GR-10B)
 

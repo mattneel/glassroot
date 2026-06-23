@@ -235,3 +235,12 @@ func cloneArtifactIndex(in ArtifactIndexDocument) ArtifactIndexDocument {
 	out.Artifacts = cloneArtifactRecords(in.Artifacts)
 	return out
 }
+
+func (b *Bundle) IsClosed() bool {
+	if b == nil {
+		return true
+	}
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	return b.closed || b.root == nil
+}

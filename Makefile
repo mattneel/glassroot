@@ -1,7 +1,7 @@
 GO ?= go
 GOFMT ?= gofmt
 
-.PHONY: fmt fmt-check vet lint test test-race test-integration schema-check test-fuzz-seeds test-gitstore test-gitstore-fuzz-seeds test-materialize test-materialize-fuzz-seeds test-pipeline test-pipeline-fuzz-seeds test-runner test-runner-fuzz-seeds test-evidence test-evidence-fuzz-seeds test-evidence-reader test-evidence-reader-fuzz-seeds test-observe test-observe-fuzz-seeds test-compare test-compare-fuzz-seeds test-policy test-policy-fuzz-seeds test-waiver test-waiver-fuzz-seeds test-policy-application build generate verify
+.PHONY: fmt fmt-check vet lint test test-race test-integration schema-check test-fuzz-seeds test-gitstore test-gitstore-fuzz-seeds test-materialize test-materialize-fuzz-seeds test-pipeline test-pipeline-fuzz-seeds test-runner test-runner-fuzz-seeds test-evidence test-evidence-fuzz-seeds test-evidence-reader test-evidence-reader-fuzz-seeds test-observe test-observe-fuzz-seeds test-compare test-compare-fuzz-seeds test-policy test-policy-fuzz-seeds test-waiver test-waiver-fuzz-seeds test-policy-application test-report test-report-fuzz-seeds build generate verify
 
 fmt:
 	$(GOFMT) -w .
@@ -39,6 +39,7 @@ test-fuzz-seeds:
 	$(GO) test ./internal/policy -run 'FuzzClassifyPolicyConfidence|FuzzEncodeFindingID|FuzzEvaluateDeltaRecord' -count=1
 	$(GO) test ./internal/waiver -run 'FuzzParseWaiverSet' -count=1
 	$(GO) test ./internal/policy -run 'FuzzHeadWaiverCannotAffectEffectiveApplication|FuzzApplyWaiverTargets|FuzzEncodePolicyApplication' -count=1
+	$(GO) test ./internal/report -run 'FuzzVisibleDisplayText|FuzzMarkdownCodeSpan|FuzzRenderReportValue|FuzzBuildReportBindings' -count=1
 
 test-gitstore:
 	$(GO) test ./internal/gitstore -count=1
@@ -116,3 +117,9 @@ test-waiver-fuzz-seeds:
 
 test-policy-application:
 	$(GO) test ./internal/policy -run 'TestApply|TestHeadWaiver|TestInvalidBaseWaiver|TestApplication|TestConfigChange|TestFrozenApplication' -count=1
+
+test-report:
+	$(GO) test ./internal/report -count=1
+
+test-report-fuzz-seeds:
+	$(GO) test ./internal/report -run 'FuzzVisibleDisplayText|FuzzMarkdownCodeSpan|FuzzRenderReportValue|FuzzBuildReportBindings' -count=1

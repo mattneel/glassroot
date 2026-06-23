@@ -117,7 +117,7 @@ The fake runner has no workspace, network, process, image, package-manager, Git,
 The evidence writer consumes a completed frozen plan and runner output. Event
 payloads, logs, logical artifact paths, artifact bytes, target outcomes, and
 synthetic fake observations remain hostile evidence data. Bundle files must not
-be executed, rendered, or trusted without the later GR-8B verifier and GR-11
+be executed, rendered, or trusted without the later GR-8B verifier and GR-11A
 renderer.
 
 The bundle parent directory is trusted control-plane state. It must not be
@@ -178,7 +178,7 @@ signing, attestation, or truthfulness. An independently retained expected
 manifest digest can detect manifest substitution, but it still does not
 authenticate the writer. A compromised writer or runner may produce internally
 consistent false evidence. Verified hostile strings, logs, and artifact bytes
-still require safe rendering by GR-11.
+still require safe rendering by GR-11A.
 
 The initial reader is Linux-only and depends on ordinary filesystem identity
 reporting. Malicious kernels, hostile filesystems, bind mounts that cannot be
@@ -272,7 +272,7 @@ the writer, runner, comparator, repository, or observations. Finding IDs and
 policy-evaluation digests provide deterministic equality only; they are not
 signatures, provenance, authentication, authorization, or attestations.
 
-GR-10A applies no waivers. Formatting in GR-11 cannot alter the frozen finding
+GR-10A applies no waivers. Formatting in GR-11A cannot alter the frozen finding
 set. A compromised comparator or policy engine can still produce misleading
 results. GR-10A introduces no rendering, signing, target execution, workspace
 access, evidence-bundle mutation, custom policy language, OPA/Rego/plugin
@@ -312,3 +312,37 @@ only. They are not signatures, authorization, authentication, provenance, or
 attestations. GR-10B introduces no rendering, signing, target execution,
 workspace access, artifact/log parsing, custom policy language, OPA/Rego/plugin
 support, or sandbox claim.
+
+## Report composition and rendering boundary (GR-11A)
+
+Reporting is a trusted transformation over a verified bundle, immutable
+behavioral delta, and final policy application. It consumes hostile strings from
+otherwise verified derived models: logical evidence paths, normalized paths,
+network destinations, warning text, owner/reason metadata, identifiers, and
+limitations may all be attacker-controlled display data.
+
+Markdown, HTML, ANSI, OSC, terminal hyperlink, clipboard, control-character,
+bidi, zero-width, unsafe-link, and mention injection are in scope for rendering.
+The GR-11A Markdown and terminal renderers therefore send every dynamic value
+through visible escaping. Terminal output contains no ANSI, OSC, terminal
+hyperlinks, BEL, carriage return, tab, backspace, C1 controls, bidi controls, or
+Unicode format controls. Markdown emits no raw HTML, no tables, no images, and no
+untrusted link destinations; evidence paths and endpoints are code values rather
+than links.
+
+Report JSON remains machine data. Consumers must not embed JSON into HTML,
+Markdown, or terminal output without their own escaping. Safe escaping makes
+hostile bytes visible; it does not make evidence strings trustworthy.
+
+Waived findings remain visible with original severity, confidence, disposition,
+evidence references, and waiver metadata. Formatting cannot change the frozen
+policy facts. Runner tier, synthetic evidence, no-target-execution state,
+internal-consistency-only verification, and evidence limitations remain
+prominent, and a passed disposition is not described as proof that code is safe.
+
+A compromised renderer can still hide or misrepresent findings. Report and
+rendered-output digests provide deterministic equality only; they are not
+signatures, authentication, authorization, provenance, attestations, or proof
+that observations are truthful. GR-11A introduces no CLI behavior, publishing,
+HTML renderer, signing, target execution, network access, workspace access,
+evidence-bundle mutation, or sandbox claim.

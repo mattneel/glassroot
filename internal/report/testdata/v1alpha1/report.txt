@@ -1,0 +1,220 @@
+GLASSROOT REPORT
+report-digest: sha256:42286dee5d560ce50007cb0ee9c71aed215a04fab0d2439e7ef642913f365e07
+run-id: run-0001
+overall-effective-disposition: requires-review
+
+NOTICES
+fake-runner: The fake runner is for tests and is not a security boundary.
+governance-findings-present: Configuration or waiver governance findings are present.
+network-deny-not-enforced: The runner did not report enforced network deny.
+no-target-code-executed: The runner reported that no target code was executed.
+observer-limitations-present: Observer or capture limitations are present.
+passed-is-not-proof-of-safety: A passed disposition does not prove the code is safe.
+synthetic-evidence: Evidence is synthetic test data, not observed target behavior.
+waivers-applied: One or more findings are effectively waived but remain visible.
+
+RUNNER
+name: fake
+version: v1
+isolation-tier: fake
+executes-target-code: false
+synthetic-evidence: true
+enforces-network-deny: false
+
+COMPLETENESS
+execution-complete: true
+evidence-complete: true
+bundle-transaction-valid: true
+manifest-verification: expected-manifest-digest
+
+FINDINGS
+finding: finding-0aaed9cd1c3bf9a563ba6a11af73ef0269ecd4d3be283cbe18ae6edc7c16109d
+origin: builtin-policy
+rule: GR-FS-001 v1alpha1
+title: New executable file or artifact
+severity: high
+confidence: low
+original-disposition: requires-review
+effective-disposition: requires-review
+waived: false
+base-observed: false
+head-observed: true
+scenario: build
+delta-record: delta-f88e96dbc40d7481d18c5d79857af23b723d87f88ca91b1a9dce00702d9929c7
+evidence: head/build/1 seq=11 event=evt-f53b082e5d5a0de9485019b6a0b2c58476e8449f47af3263d93f7148868df600 stream=attempts/head/build/repetition-0001/events.jsonl digest=sha256:e53610475deafd4ce40ef0080f78e049055d9b5c332e13125e3b68f6f9cb5f9d
+finding: finding-8a46c9bf52e088442cdd89dfb7a6e4c67b53aeb4b6bf33a33ff86d4f0f827820
+origin: trusted-configuration
+rule: GR-CONFIG-001 v1
+title: Trusted security configuration changed in head
+severity: high
+confidence: high
+original-disposition: requires-review
+effective-disposition: requires-review
+waived: false
+base-observed: false
+head-observed: true
+finding: finding-1ac2afb46943f3cac5aadc2ad38b2c3e7aff3136eeb76c4c556ffb68d9b14517
+origin: waiver-governance
+rule: GR-WAIVER-001 v1
+title: Waiver governance issue
+severity: high
+confidence: high
+original-disposition: requires-review
+effective-disposition: requires-review
+waived: false
+base-observed: false
+head-observed: true
+finding: finding-31c8dbaeba632dd6d2e6e23d431b1b3673d5eae566136ec7f176d1a28f83a42a
+origin: waiver-governance
+rule: GR-WAIVER-001 v1
+title: Waiver governance issue
+severity: high
+confidence: high
+original-disposition: requires-review
+effective-disposition: requires-review
+waived: false
+base-observed: false
+head-observed: true
+finding: finding-201fc9863da46181019613ced1a1c260dbe8dc6903acf316907e3741a9e13b2c
+origin: builtin-policy
+rule: GR-ART-001 v1alpha1
+title: New or changed artifact
+severity: medium
+confidence: low
+original-disposition: requires-review
+effective-disposition: requires-review
+waived: false
+base-observed: false
+head-observed: true
+scenario: build
+delta-record: delta-f88e96dbc40d7481d18c5d79857af23b723d87f88ca91b1a9dce00702d9929c7
+evidence: head/build/1 seq=11 event=evt-f53b082e5d5a0de9485019b6a0b2c58476e8449f47af3263d93f7148868df600 stream=attempts/head/build/repetition-0001/events.jsonl digest=sha256:e53610475deafd4ce40ef0080f78e049055d9b5c332e13125e3b68f6f9cb5f9d
+finding: finding-2191475b86b8ff9a9d4d7fb4c894d3debdebf62cb8ae8ba6895a6cae6388a934
+origin: builtin-policy
+rule: GR-OBS-001 v1alpha1
+title: Observation coverage incomplete or weakened
+severity: medium
+confidence: high
+original-disposition: requires-review
+effective-disposition: requires-review
+waived: false
+base-observed: false
+head-observed: false
+finding-limitation: synthetic-evidence:Policy evaluation is based on synthetic evidence; it is not target workload behavior.
+finding: finding-f1d1f24700f67940b33a502d99d2605e7528592700829c37d2546712d22b3137
+origin: waiver-governance
+rule: GR-WAIVER-001 v1
+title: Waiver governance issue
+severity: medium
+confidence: high
+original-disposition: requires-review
+effective-disposition: requires-review
+waived: false
+base-observed: false
+head-observed: true
+finding: finding-50868309030c5f8fd05ede5750b07e8218aba9071ecdedb116e0beb313f13959
+origin: builtin-policy
+rule: GR-NET-001 v1alpha1
+title: New or changed network behavior
+severity: high
+confidence: low
+original-disposition: requires-review
+effective-disposition: waived
+waived: true
+base-observed: false
+head-observed: true
+scenario: test
+delta-record: delta-3037b41d02883144442454837fa74a4bb635cb7b55c55e6110197f68c2783eb5
+applied-waiver: known-network
+waiver-owner: mattneel
+waiver-reason: Known deterministic fixture behavior pending removal.
+waiver-issued-at: 2026-06-23T00:00:00Z
+waiver-expires-at: 2026-07-23T00:00:00Z
+evidence: head/test/1 seq=8 event=evt-5b4d54df9b65f3c36c9363c52c55aa635226ddb09f06f267111c0d691e5a4459 stream=attempts/head/test/repetition-0001/events.jsonl digest=sha256:19a6a00ce17e79d05fc47984c0ca15b540bf2d9e49a9254dcad4b0f488cb620d
+
+DELTAS
+delta-record: delta-f88e96dbc40d7481d18c5d79857af23b723d87f88ca91b1a9dce00702d9929c7
+delta-kind: added
+fact-kind: artifact-activity
+source: synthetic-test-generated
+basis: single-sample
+base-observed: false
+head-observed: true
+delta-scenario: build
+base-occurrence: coverage=none repeatability=not-assessable total=0 min=0 max=0
+head-occurrence: coverage=complete repeatability=single-sample total=1 min=1 max=1
+evidence-reference-count: 2
+delta-record: delta-b7ecc85980bd011b40395226dbec7f7795188e9e643685749b1731237cd07174
+delta-kind: removed
+fact-kind: filesystem-write
+source: synthetic-test-generated
+basis: single-sample
+base-observed: true
+head-observed: false
+delta-scenario: build
+base-occurrence: coverage=complete repeatability=single-sample total=1 min=1 max=1
+head-occurrence: coverage=none repeatability=not-assessable total=0 min=0 max=0
+evidence-reference-count: 2
+delta-record: delta-3aa69b37dd444bfe873e6219c96dd3ff67ef8ee5f845ae7fd19747e7fcd414d6
+delta-kind: modified
+fact-kind: scenario-completed
+source: synthetic-test-generated
+basis: single-sample
+base-observed: true
+head-observed: true
+delta-scenario: build
+base-occurrence: coverage=complete repeatability=single-sample total=1 min=1 max=1
+head-occurrence: coverage=complete repeatability=single-sample total=1 min=1 max=1
+evidence-reference-count: 4
+delta-record: delta-3037b41d02883144442454837fa74a4bb635cb7b55c55e6110197f68c2783eb5
+delta-kind: added
+fact-kind: network-connection
+source: synthetic-test-generated
+basis: single-sample
+base-observed: false
+head-observed: true
+delta-scenario: test
+base-occurrence: coverage=none repeatability=not-assessable total=0 min=0 max=0
+head-occurrence: coverage=complete repeatability=single-sample total=1 min=1 max=1
+evidence-reference-count: 2
+delta-record: delta-22710470607ef3cb81e6a805fa7a2d572317349a1371f1ecbfdcf7566f33e2df
+delta-kind: added
+fact-kind: scenario-completed
+source: synthetic-test-generated
+basis: single-sample
+base-observed: false
+head-observed: true
+delta-scenario: test
+base-occurrence: coverage=none repeatability=not-assessable total=0 min=0 max=0
+head-occurrence: coverage=complete repeatability=single-sample total=1 min=1 max=1
+evidence-reference-count: 2
+delta-record: delta-3b367e4d6383d9fa4ae64f73a3d05d62499abc5aef19ee40a376c81bb002808f
+delta-kind: removed
+fact-kind: process-start
+source: synthetic-test-generated
+basis: single-sample
+base-observed: true
+head-observed: false
+delta-scenario: test
+base-occurrence: coverage=complete repeatability=single-sample total=1 min=1 max=1
+head-occurrence: coverage=none repeatability=not-assessable total=0 min=0 max=0
+evidence-reference-count: 2
+delta-record: delta-c5b65d1e0806051163cd3f6e9bb3df016c8e8ada0a2d544ce660a8349314069d
+delta-kind: removed
+fact-kind: scenario-completed
+source: synthetic-test-generated
+basis: single-sample
+base-observed: true
+head-observed: false
+delta-scenario: test
+base-occurrence: coverage=complete repeatability=single-sample total=1 min=1 max=1
+head-occurrence: coverage=none repeatability=not-assessable total=0 min=0 max=0
+evidence-reference-count: 2
+
+LIMITATIONS
+limitation: synthetic-no-target-execution No target code was executed by this runner.
+limitation: synthetic-no-target-execution No target code was executed by this runner.
+limitation: synthetic-no-target-execution No target code was executed by this runner.
+limitation: synthetic-observations All observations are synthetic test data, not observed repository behavior.
+limitation: synthetic-observations All observations are synthetic test data, not observed repository behavior.
+limitation: synthetic-observations All observations are synthetic test data, not observed repository behavior.

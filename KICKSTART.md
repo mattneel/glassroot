@@ -1077,14 +1077,35 @@ Acceptance criteria:
   recoverable;
 - no target content executes.
 
-### GR-11: Reporters and `inspect`
+### GR-11A: Immutable report model and safe renderers
 
 Acceptance criteria:
 
-- render JSON, Markdown, and terminal summaries;
-- escape ANSI, control characters, Markdown, and unsafe links;
-- show runner tier and evidence limitations prominently;
-- `glassroot inspect` never executes bundle content.
+- binds a verified bundle, immutable behavioral delta, and final policy
+  application;
+- preserves every finding, waiver, governance issue, delta, limitation, and
+  evidence reference;
+- reports runner identity, capabilities, isolation tier, and completeness
+  prominently;
+- renders deterministic compact JSON, safe Markdown, and ANSI-free terminal
+  text;
+- escapes controls, bidi characters, Markdown injection, HTML, and unsafe
+  links;
+- waived and failed findings cannot be hidden by formatting;
+- reporting executes nothing.
+
+### GR-11B: `glassroot inspect`
+
+Acceptance criteria:
+
+- opens evidence only through the strict GR-8B verifier;
+- makes expected-manifest-digest and trusted Git-source inputs explicit;
+- never falls back to a working tree or unverified report input;
+- deterministically reconstructs the supported normalization, comparison,
+  policy, waiver, and report stages;
+- uses only GR-11A renderers;
+- exposes stable output and exit-code behavior;
+- never executes bundle or target content.
 
 ### GR-12: End-to-end fake-runner demo
 
