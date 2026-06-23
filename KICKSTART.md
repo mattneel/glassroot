@@ -802,8 +802,8 @@ Deliver:
 - initial deterministic rules;
 - waiver model sourced only from base;
 - `glassroot inspect`;
-- malicious and benign fake evidence fixtures;
-- end-to-end test from plan through report.
+- deterministic fake-runner behavior-change and control fixtures;
+- end-to-end test from fixture Git through inspect-reconstructed report.
 
 No arbitrary code execution is required to complete this milestone.
 
@@ -1111,14 +1111,29 @@ Acceptance criteria:
 - exposes stable exit codes 0, 2, 3, 4, and 5;
 - never executes bundle or target content.
 
-### GR-12: End-to-end fake-runner demo
+### GR-12: Deterministic end-to-end fake-runner demo
 
 Acceptance criteria:
 
-- one command produces a full evidence bundle from a fixture base/head pair;
-- the head fixture introduces a new process, network attempt, and executable artifact in fake evidence;
-- report points to the exact evidence records;
-- output is deterministic in CI.
+- `glassroot demo fake` publishes a new output directory containing
+  `fixture.git`, `evidence`, `report.json`, `report.md`, `report.txt`, and
+  `demo.json`;
+- immutable built-in `behavior-change` and `control` fixtures create exact
+  base/head commits with inert source data and trusted-base pipeline
+  configuration;
+- source materialization is used only for real source descriptors and every
+  temporary workspace is removed before publication;
+- the behavior-change fixture demonstrates head-only synthetic process,
+  denied-network, executable-artifact/file, and changed-artifact behavior;
+- the control fixture demonstrates that source revision changes alone do not
+  create ordinary head-positive behavioral findings;
+- evidence is written through GR-8A, verified through GR-8B, and reconstructed
+  through `glassroot inspect` using exact commits and expected manifest digest;
+- reports retain exact evidence references for key synthetic behavior;
+- JSON, Markdown, terminal output, metadata, identities, and digests are
+  deterministic in CI;
+- no target or fixture content executes, no network is accessed, and no
+  workload-capable runner is introduced.
 
 ### GR-13: Docker development runner
 

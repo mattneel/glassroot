@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/mattneel/glassroot/internal/config"
+	"github.com/mattneel/glassroot/internal/demo"
 	"github.com/mattneel/glassroot/internal/inspect"
 	"github.com/mattneel/glassroot/internal/model"
 	"github.com/mattneel/glassroot/internal/report"
@@ -40,9 +41,83 @@ func runWithContext(ctx context.Context, args []string, stdout, stderr io.Writer
 	if len(args) >= 1 && args[0] == "inspect" {
 		return runInspect(ctx, args[1:], stdout, stderr)
 	}
+	if len(args) >= 2 && args[0] == "demo" && args[1] == "fake" {
+		return runDemoFake(ctx, args[2:], stdout, stderr)
+	}
 
 	printUsage(stderr)
 	return 2
+}
+
+func runDemoFake(ctx context.Context, args []string, stdout, stderr io.Writer) int {
+	parsed, err := demo.ParseCLIArguments(args)
+	if err != nil {
+		writeDemoDiagnostic(stderr, err, true)
+		return 2
+	}
+	if parsed.Help {
+		printDemoFakeUsage(stdout)
+		return 0
+	}
+	d, err := demo.New(demo.DefaultLimits())
+	if err != nil {
+		writeDemoDiagnostic(stderr, err, false)
+		return 3
+	}
+	result, err := d.Create(ctx, parsed.Request)
+	if err != nil {
+		writeDemoDiagnostic(stderr, err, demo.IsUsageError(err))
+		if demo.IsUsageError(err) {
+			return 2
+		}
+		return 3
+	}
+	exitCode, err := inspectDispositionExitCode(result.EffectiveDisposition)
+	if err != nil {
+		writeDemoDiagnostic(stderr, err, false)
+		return 3
+	}
+	out, err := renderDemoOutput(ctx, result.Report, parsed.Format)
+	if err != nil {
+		writeDemoDiagnostic(stderr, err, false)
+		return 3
+	}
+	if err := writeAll(stdout, out); err != nil {
+		writeDemoDiagnostic(stderr, &demo.Error{Code: demo.CodeOutputFailed, Stage: "output", Message: "stdout write failed", Err: err}, false)
+		return 3
+	}
+	return exitCode
+}
+
+func renderDemoOutput(ctx context.Context, fr *report.FrozenReport, format string) ([]byte, error) {
+	if fr == nil {
+		return nil, &demo.Error{Code: demo.CodeReportRenderFailed, Stage: "render", Message: "missing report"}
+	}
+	switch format {
+	case "terminal":
+		out, err := report.RenderTerminal(ctx, fr, report.DefaultRenderLimits())
+		if err != nil {
+			return nil, &demo.Error{Code: demo.CodeReportRenderFailed, Stage: "render", Message: "terminal rendering failed", Err: err}
+		}
+		return append([]byte(nil), out.Bytes...), nil
+	case "markdown":
+		out, err := report.RenderMarkdown(ctx, fr, report.DefaultRenderLimits())
+		if err != nil {
+			return nil, &demo.Error{Code: demo.CodeReportRenderFailed, Stage: "render", Message: "markdown rendering failed", Err: err}
+		}
+		return append([]byte(nil), out.Bytes...), nil
+	case "json":
+		return fr.JSON(), nil
+	default:
+		return nil, &demo.Error{Code: demo.CodeInvalidRequest, Stage: "render", Message: "invalid output format", Usage: true}
+	}
+}
+
+func writeDemoDiagnostic(w io.Writer, err error, includeUsage bool) {
+	_, _ = fmt.Fprintf(w, "glassroot demo fake: %s\n", demo.Diagnostic(err))
+	if includeUsage {
+		printDemoFakeUsage(w)
+	}
 }
 
 func runInspect(ctx context.Context, args []string, stdout, stderr io.Writer) int {
@@ -185,6 +260,7 @@ func printUsage(w io.Writer) {
 	fmt.Fprintln(w, "usage: glassroot version")
 	fmt.Fprintln(w, "       glassroot validate [--file PATH]")
 	fmt.Fprintln(w, "       glassroot inspect [flags] <absolute-evidence-directory>")
+	fmt.Fprintln(w, "       glassroot demo fake [flags] <absolute-new-output-directory>")
 }
 
 func printInspectUsage(w io.Writer) {
@@ -200,6 +276,14 @@ func printInspectUsage(w io.Writer) {
 	fmt.Fprintln(w, "    --allow-internal-consistency-only")
 	fmt.Fprintln(w, "optional flags:")
 	fmt.Fprintln(w, "  --format terminal|markdown|json   default: terminal")
+}
+
+func printDemoFakeUsage(w io.Writer) {
+	fmt.Fprintln(w, "usage: glassroot demo fake [flags] <absolute-new-output-directory>")
+	fmt.Fprintln(w, "")
+	fmt.Fprintln(w, "optional flags:")
+	fmt.Fprintln(w, "  --fixture behavior-change|control   default: behavior-change")
+	fmt.Fprintln(w, "  --format terminal|markdown|json      default: terminal")
 }
 
 func writeDiagnostics(w io.Writer, file string, err error) {

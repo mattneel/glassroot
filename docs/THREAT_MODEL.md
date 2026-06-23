@@ -380,3 +380,35 @@ disposition was `passed`; it is not a safety proof. A compromised Git store,
 expected-digest custody process, inspector, host, or clock input can still
 produce misleading results. GR-11B introduces no signing, publishing,
 authentication, attestation, sandbox, provenance claim, or target execution.
+
+## Deterministic fake-demo boundary (GR-12)
+
+`glassroot demo fake` creates trusted Glassroot-controlled fixture state for an
+M2 vertical slice. The fixture source trees are inert repository data and are
+never executed. The fake Program is trusted control-plane code compiled into
+Glassroot; repository content cannot define synthetic events, modify the Program,
+or turn the pipeline `run` string into behavior. Synthetic behavior is not
+derived from source execution and must not be described as target-workload
+observation, malicious intent, sandbox evidence, provenance, authentication, or a
+safety claim.
+
+The generated bare Git store is control-plane-created fixture metadata. It is not
+copied from caller input, does not use a worktree, and is verified through the
+same Git object reader used elsewhere. Commit, tree, blob, and path bytes remain
+hostile data for parsers and renderers. Materialization still treats paths and
+blobs defensively and is used only to compute source descriptors; temporary
+source workspaces are removed before final publication and their paths are not
+serialized.
+
+The final output parent is trusted caller state. Private random staging names and
+an atomic rename protect against partial publication under normal local
+filesystem assumptions. Same-UID mutation, hostile mounts, kernel compromise,
+filesystem compromise, and durability guarantees beyond successful sync remain
+residual risks. A compromised demo fixture, fake Program, publication code, or
+host can still produce misleading synthetic evidence or metadata.
+
+Demo reports and `demo.json` digests provide deterministic equality only. They
+are not signatures, authorization, authentication, attestations, provenance, or
+proof that observations are truthful. GR-12 introduces no Docker, gVisor,
+Firecracker, target execution, network access, signing, publishing, or sandbox
+claim.

@@ -1,0 +1,38 @@
+GLASSROOT REPORT
+report-digest: sha256:d89f852b544fb726d41beb1048522503875a888903228d39a647b9621bc126df
+run-id: gr12-control
+overall-effective-disposition: passed
+
+NOTICES
+fake-runner: The fake runner is for tests and is not a security boundary.
+network-deny-not-enforced: The runner did not report enforced network deny.
+no-target-code-executed: The runner reported that no target code was executed.
+observer-limitations-present: Observer or capture limitations are present.
+passed-is-not-proof-of-safety: A passed disposition does not prove the code is safe.
+synthetic-evidence: Evidence is synthetic test data, not observed target behavior.
+
+RUNNER
+name: fake
+version: v1
+isolation-tier: fake
+executes-target-code: false
+synthetic-evidence: true
+enforces-network-deny: false
+
+COMPLETENESS
+execution-complete: true
+evidence-complete: true
+bundle-transaction-valid: true
+manifest-verification: expected-manifest-digest
+
+FINDINGS
+
+DELTAS
+
+LIMITATIONS
+limitation: synthetic-no-target-execution No target code was executed by this runner.
+limitation: synthetic-no-target-execution No target code was executed by this runner.
+limitation: synthetic-no-target-execution No target code was executed by this runner.
+limitation: synthetic-observations All observations are synthetic test data, not observed repository behavior.
+limitation: synthetic-observations All observations are synthetic test data, not observed repository behavior.
+limitation: synthetic-observations All observations are synthetic test data, not observed repository behavior.

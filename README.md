@@ -8,10 +8,10 @@ then reports observed differences with evidence.
 
 Glassroot is **pre-alpha**. It is not yet suitable for running hostile or
 untrusted workloads. The repository now includes strict evidence verification,
-normalization, comparison, built-in policy, trusted-base waiver application, and
-safe report rendering for existing bundles, plus the `inspect` CLI. It still does
-not include a hardened runner, Docker integration, GitHub App, or user-facing
-bundle-creation command.
+normalization, comparison, built-in policy, trusted-base waiver application, safe
+report rendering for existing bundles, the `inspect` CLI, and a deterministic
+fake-runner demo. It still does not include a hardened runner, Docker
+integration, GitHub App, or workload-capable bundle-creation command.
 
 ## Install for development
 
@@ -50,6 +50,21 @@ go run ./cmd/glassroot inspect \
 evidence, execute target code, fetch Git data, read a working tree, or prove that
 a change is safe. See [docs/INSPECT.md](docs/INSPECT.md).
 
+Pre-alpha synthetic demo output can be generated with the fake runner:
+
+```bash
+go run ./cmd/glassroot demo fake \
+  --fixture behavior-change \
+  --format terminal \
+  /absolute/path/to/glassroot-demo
+```
+
+The demo creates trusted fixture revisions, synthetic fake-runner evidence, and
+reports, then verifies the bundle through `inspect`. It executes nothing, does
+not run fixture source, does not access a network, and is an M2 demonstration
+only. Synthetic observations are not target-workload observations and are not
+suitable for analyzing hostile workloads. See [docs/DEMO.md](docs/DEMO.md).
+
 ## Development
 
 ```bash
@@ -59,16 +74,16 @@ make verify
 ```
 
 `make verify` runs formatting, vetting, tests, and a CLI build. The current
-pre-alpha inspect path intentionally executes no target repository code.
+pre-alpha inspect and demo paths intentionally execute no target repository code.
 
 ## Security posture
 
 Do not use this pre-alpha scaffold to run hostile repositories. `inspect` can
-read already-created evidence bundles, but it still depends on explicit caller
-trust anchors and makes no sandbox, provenance, authentication, attestation, or
-safety claim. Future milestones will add user-facing bundle creation and hardened
-runners. Until those components exist and are reviewed, Glassroot makes no
-hardened-runner security claim.
+read already-created evidence bundles, and `demo fake` can create synthetic demo
+fixtures, but neither executes target code or makes a sandbox, provenance,
+authentication, attestation, or safety claim. Future milestones will add
+workload-capable bundle creation and hardened runners. Until those components
+exist and are reviewed, Glassroot makes no hardened-runner security claim.
 
 ## License
 
