@@ -151,6 +151,9 @@ type RunnerCapabilities struct {
 	IsolationTier             IsolationTier `json:"isolationTier"`
 	FreshKernel               bool          `json:"freshKernel"`
 	BrokeredNetwork           bool          `json:"brokeredNetwork"`
+	ExecutesTargetCode        bool          `json:"executesTargetCode,omitempty"`
+	SyntheticEvidence         bool          `json:"syntheticEvidence,omitempty"`
+	EnforcesNetworkDeny       bool          `json:"enforcesNetworkDeny,omitempty"`
 	ProcessEventCollection    bool          `json:"processEventCollection"`
 	FilesystemEventCollection bool          `json:"filesystemEventCollection"`
 	SyscallEventCollection    bool          `json:"syscallEventCollection"`

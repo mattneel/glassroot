@@ -218,6 +218,7 @@ func TestSchemaVersionAndEnumWireValues(t *testing.T) {
 		{ObservationSourceWorkloadReported, "workload-reported"},
 		{ObservationSourceStaticAnalysisDerived, "static-analysis-derived"},
 		{ObservationSourceModelInferred, "model-inferred"},
+		{ObservationSourceSyntheticTestGenerated, "synthetic-test-generated"},
 	}
 	for _, tt := range observationSources {
 		if tt.got != tt.want {

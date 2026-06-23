@@ -137,3 +137,9 @@ separate planner golden fixture records the current GR-7A output.
 The plan digest is computed outside the run-plan document and is not stored in
 the hashed model. It is tied to the GR-7A compact `encoding/json` output and does
 not make a canonical JSON or attestation claim.
+
+### GR-7B additive runner/event fields
+
+GR-7B adds optional v1alpha1 model fields needed by the runner boundary: `repetition` on `ObservationEvent` for unambiguous repeated scenario attempts, and runner capability facts `executesTargetCode`, `syntheticEvidence`, and `enforcesNetworkDeny`. It also adds the observation source value `synthetic-test-generated` for fake-runner data. Existing fixtures are preserved where absent fields remain observable as zero values; Glassroot-emitted GR-7B events always populate repetition.
+
+The legacy `RunPlan.runner` object remains non-authoritative. Actual backend capabilities are not inserted into the frozen plan after planning, because doing so would mutate the plan and its digest. Future removal or redesign of that legacy field requires a new schema-version decision.

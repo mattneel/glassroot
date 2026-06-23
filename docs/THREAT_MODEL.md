@@ -101,3 +101,13 @@ authorization tokens, attestations, sandbox claims, or proof that source is safe
 GR-7B and later runners must consume the finalized plan without reinterpreting or
 augmenting commands, limits, networking, or base/head trust semantics. No
 workload execution exists in GR-7A.
+
+## Runner contract and fake runner boundary (GR-7B)
+
+The runner consumes a finalized `FrozenPlan`. Actual backend capabilities are trusted backend claims and must be matched against trusted caller requirements before any event is emitted. Repository input cannot opt into the fake runner, select a backend, relax capability requirements, or provide a fake Program.
+
+Fake Programs are trusted control-plane or test data. Fake events are synthetic and use the `synthetic-test-generated` provenance label. They are not observations of repository behavior. The event envelope is stamped outside backend control, so a backend cannot forge run ID, revision, scenario ID, repetition, event ID, or sequence number through an event draft.
+
+A compromised backend can still lie about typed payload observations, so future evidence and policy layers must surface runner identity, capabilities, provenance, and limitations. Sink failure creates incomplete evidence and stops execution immediately; cancellation may leave no final lifecycle event. No persistent evidence layer exists until GR-8.
+
+The fake runner has no workspace, network, process, image, package-manager, Git, or secret access. No target execution exists in GR-7B. Future workload-capable runners must bind separate base/head workspaces outside the serialized plan and enforce cleanup, cancellation, observation, and isolation themselves.

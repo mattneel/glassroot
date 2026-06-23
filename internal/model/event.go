@@ -10,6 +10,7 @@ type ObservationEvent struct {
 	RunID           string                      `json:"runId"`
 	Revision        RevisionKind                `json:"revision"`
 	ScenarioID      string                      `json:"scenarioId"`
+	Repetition      uint32                      `json:"repetition,omitempty"`
 	SequenceNumber  int64                       `json:"sequenceNumber"`
 	ObservedAt      time.Time                   `json:"observedAt"`
 	Source          ObservationSource           `json:"source"`
@@ -34,6 +35,7 @@ const (
 	ObservationSourceWorkloadReported       ObservationSource = "workload-reported"
 	ObservationSourceStaticAnalysisDerived  ObservationSource = "static-analysis-derived"
 	ObservationSourceModelInferred          ObservationSource = "model-inferred"
+	ObservationSourceSyntheticTestGenerated ObservationSource = "synthetic-test-generated"
 )
 
 // ObservationKind identifies the category of typed observation payload.

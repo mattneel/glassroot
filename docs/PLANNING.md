@@ -122,7 +122,7 @@ attestation, canonical JSON claim, or proof that source is safe.
 
 ## Future work
 
-GR-7B will add capability matching and a fake runner that consumes the finalized
-plan without reinterpreting commands, limits, or networking. Application-layer
-orchestration will associate nonserialized workspace handles with revision plans;
-those handles must not enter the wire plan.
+GR-7B adds capability matching and a deterministic fake runner that consumes the
+finalized plan without reinterpreting commands, limits, or networking.
+Application-layer orchestration will later associate nonserialized workspace
+handles with revision plans; those handles must not enter the wire plan.
