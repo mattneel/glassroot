@@ -709,3 +709,41 @@ private fork inaccessibility, delayed installation events, clock errors, or leas
 expiry races can forge, drop, delay, or misclassify controller work. Public PR
 execution remains prohibited, and GR-15B2 introduces no sandbox, provenance,
 authentication, attestation, safety, or exactly-once claim.
+
+## GitHub source ingestion (GR-15B3)
+
+GR-15B3 adds exact source ingestion but no worker assignment, target execution,
+publication, or public PR authorization. The source ingester holds no App private
+key, webhook secret, pull-request-read token, Checks-write token, OAuth token, or
+worker credential. It transiently obtains one-repository `source-read`
+installation tokens from the GR-15B1 broker for the base repository ID only.
+Tokens are not persisted, logged, placed in IDs, Git argv, remote URLs, Git
+config files, source-store metadata, controller records, errors, or future worker
+contracts. Tokens do exist transiently in the trusted Glassroot process, the Git
+child process, Git HTTPS-helper memory, and a fixed child environment variable;
+same-UID host compromise can expose them on some systems.
+
+The source ingester uses Git smart HTTP to the fixed GitHub.com base repository
+remote. GitHub, TLS roots, Git's smart-HTTP implementation, Git's pack parser,
+the trusted Git executable, the broker, the controller store, the source-root
+filesystem, the local clock, and the host kernel remain trusted dependencies.
+Repository objects, pack contents, trees, blobs, gitlinks, LFS pointer files, and
+route owner/name hints are hostile input. Route names are non-authoritative
+transport hints; numeric repository IDs and exact controller-authorized commits
+remain identity authority.
+
+The PR head ref under `refs/pull/<number>/head` is mutable and is used only as a
+transport locator. The fetched head ref must equal the expected head commit
+exactly; movement or mismatch fails closed as stale source. No head-repository
+token, unauthenticated public fallback, redirect, proxy, archive, checkout,
+partial clone, submodule traversal, LFS object fetch, or working tree exists in
+GR-15B3.
+
+Source stores are shallow and complete only for the selected revisions. They omit
+unrelated history, tags, submodule contents, and LFS object payloads. SourceStoreID
+is an opaque descriptor, not authentication, provenance, an attestation, or a
+digest of physical pack bytes. A successful import does not prove source content
+is benign or safe to execute. The source-root database/filesystem can forge, drop,
+corrupt, or withhold stores if compromised, and a quota-backed filesystem remains
+required for hard disk-exhaustion defense during pack ingestion. Workers receive
+no token and no physical source path. Public PR execution remains prohibited.

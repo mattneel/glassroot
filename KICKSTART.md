@@ -1293,13 +1293,21 @@ status.
 
 Acceptance criteria:
 
-- obtains one-repository Contents-read tokens through GR-15B1;
-- imports exact base/head Git objects into a control-plane-created bare store;
-- never passes tokens to workers or sandboxes;
-- handles inaccessible/private fork heads explicitly;
-- verifies exact commit/tree identities;
-- runs existing gitstore preflight before handoff;
-- performs no target execution or publication.
+- consumes only credential-free GR-15B2 source requests;
+- requests one-repository Contents-read (`source-read`) tokens through GR-15B1;
+- imports from fixed GitHub smart HTTP;
+- uses the base repository PR-head ref only as a transport hint;
+- verifies exact controller-authorized base/head commits and trees;
+- creates a shallow, complete-for-target, control-plane bare store;
+- persists no token, remote credential, raw URL, or working tree;
+- verifies stores through GR-6A before reporting success;
+- publishes under an opaque deterministic SourceStoreID;
+- supports idempotent retry and existing-store reuse;
+- produces no WorkerAssignment and executes nothing.
+
+GR-15B3 implementation is present. It does not mark M5 complete, does not make
+public execution eligible, and does not change GR-14 or M3 runtime-validation
+status.
 
 ### GR-15C: Hardened worker protocol
 

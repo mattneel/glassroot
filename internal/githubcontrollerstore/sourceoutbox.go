@@ -3,6 +3,7 @@ package githubcontrollerstore
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"math"
 	"strings"
@@ -23,7 +24,7 @@ func (s *Store) ClaimSourceImports(ctx context.Context, owner string, now time.T
 		return nil, wrap(CodeTransactionFailed, "source-lease", "source lease transaction failed", err)
 	}
 	defer rollback(tx)
-	rows, err := tx.QueryContext(ctx, `SELECT sequence,request_id,target_id,job_id,generation,installation_id,base_repository_id,base_owner,base_name,base_commit_id,head_repository_id,head_owner,head_name,head_commit_id,state,lease_generation,attempt_count,created_at FROM source_requests WHERE state='pending' OR (state='leased' AND lease_expires_at <= ?) ORDER BY sequence LIMIT ?`, formatTime(now), limit)
+	rows, err := tx.QueryContext(ctx, `SELECT sequence,request_id,target_id,job_id,generation,installation_id,pull_request_number,base_repository_id,base_owner,base_name,base_commit_id,head_repository_id,head_owner,head_name,head_commit_id,state,lease_generation,attempt_count,created_at FROM source_requests WHERE state='pending' OR (state='leased' AND lease_expires_at <= ?) ORDER BY sequence LIMIT ?`, formatTime(now), limit)
 	if err != nil {
 		return nil, wrap(CodeTransactionFailed, "source-lease", "source claim failed", err)
 	}
@@ -38,7 +39,7 @@ func (s *Store) ClaimSourceImports(ctx context.Context, owner string, now time.T
 		var c cand
 		var created string
 		var state string
-		if err := rows.Scan(&c.seq, &c.req.ID, &c.req.TargetID, &c.req.JobID, &c.req.Generation, &c.req.InstallationID, &c.req.Base.RepositoryID, &c.req.Base.Owner, &c.req.Base.Name, &c.req.Base.CommitID, &c.req.Head.RepositoryID, &c.req.Head.Owner, &c.req.Head.Name, &c.req.Head.CommitID, &state, &c.prevGen, &c.attempts, &created); err != nil {
+		if err := rows.Scan(&c.seq, &c.req.ID, &c.req.TargetID, &c.req.JobID, &c.req.Generation, &c.req.InstallationID, &c.req.PullRequestNumber, &c.req.Base.RepositoryID, &c.req.Base.Owner, &c.req.Base.Name, &c.req.Base.CommitID, &c.req.Head.RepositoryID, &c.req.Head.Owner, &c.req.Head.Name, &c.req.Head.CommitID, &state, &c.prevGen, &c.attempts, &created); err != nil {
 			_ = rows.Close()
 			return nil, wrap(CodeRecordInvalid, "source-lease", "source row rejected", err)
 		}
@@ -110,8 +111,13 @@ func (s *Store) ApplySourceImportResult(ctx context.Context, r SourceImportResul
 	if r.RequestID == "" || r.TargetID == "" || r.JobID == "" || r.Generation <= 0 || r.BaseRepositoryID <= 0 || r.HeadRepositoryID <= 0 || !validGitObjectID(r.BaseCommitID) || !validGitObjectID(r.HeadCommitID) || !validID(owner) || leaseGeneration <= 0 || !validTime(when) {
 		return errCode(CodeRecordInvalid, "source-result", "source result rejected", nil)
 	}
-	if strings.Contains(strings.ToLower(r.SourceStoreID), "token") || strings.Contains(r.SourceStoreID, "/") || strings.Contains(r.SourceStoreID, "http") {
-		return errCode(CodeRecordInvalid, "source-result", "source store id rejected", nil)
+	limitationsJSON := ""
+	if !r.Failed {
+		var err error
+		limitationsJSON, err = validateSuccessfulSourceResult(r)
+		if err != nil {
+			return err
+		}
 	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -136,7 +142,7 @@ func (s *Store) ApplySourceImportResult(ctx context.Context, r SourceImportResul
 		nextReq = SourceStateFailed
 		nextJob = githubapp.JobStateFailed
 	}
-	if _, err := tx.ExecContext(ctx, `UPDATE source_requests SET state=?, completed_at=?, source_store_id=?, lease_expires_at=NULL WHERE request_id=?`, string(nextReq), formatTime(when), nullable(r.SourceStoreID), r.RequestID); err != nil {
+	if _, err := tx.ExecContext(ctx, `UPDATE source_requests SET state=?, completed_at=?, source_store_id=?, source_metadata_digest=?, source_import_profile_version=?, source_object_format=?, source_base_tree_id=?, source_head_tree_id=?, source_limitations_json=?, lease_expires_at=NULL WHERE request_id=?`, string(nextReq), formatTime(when), nullable(r.SourceStoreID), nullable(r.MetadataDigest), nullable(r.ImportProfileVersion), nullable(r.ObjectFormat), nullable(r.BaseTreeID), nullable(r.HeadTreeID), nullable(limitationsJSON), r.RequestID); err != nil {
 		return wrap(CodeTransactionFailed, "source-result", "source request update failed", err)
 	}
 	if _, err := tx.ExecContext(ctx, `UPDATE jobs SET state=? WHERE job_id=? AND generation=? AND state=?`, string(nextJob), r.JobID, r.Generation, string(githubapp.JobStateImportingSource)); err != nil {
@@ -146,6 +152,57 @@ func (s *Store) ApplySourceImportResult(ctx context.Context, r SourceImportResul
 		return wrap(CodeTransactionFailed, "source-result", "source result commit failed", err)
 	}
 	return nil
+}
+
+func validateSuccessfulSourceResult(r SourceImportResult) (string, error) {
+	if !strings.HasPrefix(r.SourceStoreID, "source-") || len(r.SourceStoreID) != len("source-")+64 || !isLowerHex(r.SourceStoreID[len("source-"):], 64) {
+		return "", errCode(CodeRecordInvalid, "source-result", "source store id rejected", nil)
+	}
+	if !strings.HasPrefix(r.MetadataDigest, "sha256:") || len(r.MetadataDigest) != len("sha256:")+64 || !isLowerHex(r.MetadataDigest[len("sha256:"):], 64) {
+		return "", errCode(CodeRecordInvalid, "source-result", "metadata digest rejected", nil)
+	}
+	if r.ImportProfileVersion != SourceImportProfileSmartHTTPShallowV1Alpha1 {
+		return "", errCode(CodeRecordInvalid, "source-result", "import profile rejected", nil)
+	}
+	wantLen := 40
+	if len(r.BaseCommitID) == 64 {
+		wantLen = 64
+	}
+	switch r.ObjectFormat {
+	case "sha1":
+		if wantLen != 40 {
+			return "", errCode(CodeRecordInvalid, "source-result", "object format rejected", nil)
+		}
+	case "sha256":
+		if wantLen != 64 {
+			return "", errCode(CodeRecordInvalid, "source-result", "object format rejected", nil)
+		}
+	default:
+		return "", errCode(CodeRecordInvalid, "source-result", "object format rejected", nil)
+	}
+	if !isLowerHex(r.BaseTreeID, wantLen) || !isLowerHex(r.HeadTreeID, wantLen) {
+		return "", errCode(CodeRecordInvalid, "source-result", "tree identity rejected", nil)
+	}
+	if len(r.Limitations) == 0 || len(r.Limitations) > 1000 {
+		return "", errCode(CodeRecordInvalid, "source-result", "limitations rejected", nil)
+	}
+	for _, lim := range r.Limitations {
+		if lim == "" || len(lim) > 512 || hasControl(lim) {
+			return "", errCode(CodeRecordInvalid, "source-result", "limitations rejected", nil)
+		}
+		lower := strings.ToLower(lim)
+		if strings.Contains(lower, "token") || strings.Contains(lower, "secret") || strings.Contains(lower, "http://") || strings.Contains(lower, "https://") || strings.Contains(lim, "/") {
+			return "", errCode(CodeRecordInvalid, "source-result", "limitations rejected", nil)
+		}
+	}
+	b, err := json.Marshal(r.Limitations)
+	if err != nil {
+		return "", wrap(CodeRecordInvalid, "source-result", "limitations encode failed", err)
+	}
+	if len(b) > 65536 {
+		return "", errCode(CodeRecordInvalid, "source-result", "limitations rejected", nil)
+	}
+	return string(b), nil
 }
 
 func (s *Store) GetJobState(ctx context.Context, jobID string) (string, error) {

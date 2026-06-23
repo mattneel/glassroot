@@ -57,4 +57,4 @@ Status handling distinguishes 401/403/404/422/429/5xx and malformed success resp
 
 ## Deferred work
 
-GR-15B2 uses only `pull-request-read` tokens for controller reconciliation. GR-15B3 will use `source-read` tokens for exact source ingestion into control-plane-created Git stores. GR-15D requires a separate reviewed Checks-write publisher token purpose; it is intentionally absent here.
+GR-15B2 uses only `pull-request-read` tokens for controller reconciliation. GR-15B3 source ingestion does not extend `internal/githubapi`; it uses `source-read` tokens minted by GR-15B1 and Git smart HTTP through the isolated Git command boundary. No repository contents REST endpoint is added. GR-15D requires a separate reviewed Checks-write publisher token purpose; it is intentionally absent here.

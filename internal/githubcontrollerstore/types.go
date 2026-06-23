@@ -8,10 +8,11 @@ import (
 )
 
 const (
-	SchemaControllerStoreV1Alpha1     = "glassroot.dev/github-controller-store/v1alpha1"
-	ControllerProfileAdvisoryV1Alpha1 = "glassroot.dev/github-controller-profile/advisory/v1alpha1"
-	SchemaSourceImportRequestV1Alpha1 = "glassroot.dev/github-source-import-request/v1alpha1"
-	DomainSourceImportRequestID       = "glassroot.dev/github-source-import-request-id/v1\x00"
+	SchemaControllerStoreV1Alpha1               = "glassroot.dev/github-controller-store/v1alpha1"
+	ControllerProfileAdvisoryV1Alpha1           = "glassroot.dev/github-controller-profile/advisory/v1alpha1"
+	SchemaSourceImportRequestV1Alpha1           = "glassroot.dev/github-source-import-request/v1alpha1"
+	DomainSourceImportRequestID                 = "glassroot.dev/github-source-import-request-id/v1\x00"
+	SourceImportProfileSmartHTTPShallowV1Alpha1 = "glassroot.dev/github-source-import/smart-http-shallow/v1alpha1"
 )
 
 type Config struct {
@@ -119,6 +120,7 @@ type SourceImportRequest struct {
 	JobID                    string             `json:"jobId"`
 	Generation               int64              `json:"generation"`
 	InstallationID           int64              `json:"installationId"`
+	PullRequestNumber        int64              `json:"pullRequestNumber"`
 	Base                     RouteHint          `json:"base"`
 	Head                     RouteHint          `json:"head"`
 	ControllerProfileVersion string             `json:"controllerProfileVersion"`
@@ -126,7 +128,6 @@ type SourceImportRequest struct {
 	CreatedAt                time.Time          `json:"createdAt"`
 	LeaseOwner               string             `json:"-"`
 	LeaseGeneration          int64              `json:"-"`
-	TokenCanaryForTest       string             `json:"-"`
 }
 type SourceImportResult struct {
 	RequestID, TargetID, JobID         string
@@ -134,6 +135,11 @@ type SourceImportResult struct {
 	BaseRepositoryID, HeadRepositoryID int64
 	BaseCommitID, HeadCommitID         string
 	SourceStoreID                      string
+	MetadataDigest                     string
+	ImportProfileVersion               string
+	ObjectFormat                       string
+	BaseTreeID, HeadTreeID             string
+	Limitations                        []string
 	Failed                             bool
 }
 type CheckBinding struct {

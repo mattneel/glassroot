@@ -119,7 +119,7 @@ Installation and installation-repository events are conservative invalidation hi
 
 ## Source and worker boundaries
 
-Source-import requests contain numeric repository IDs, bounded route hints, exact commits, target/job/generation IDs, state, and lease metadata. They contain no GitHub token, App private key, webhook secret, API URL, clone/archive URL, branch/ref, PR prose, worker identity, or Check Run credential.
+Source-import requests contain numeric repository IDs, pull-request number, bounded route hints, exact commits, target/job/generation IDs, state, and lease metadata. They contain no GitHub token, App private key, webhook secret, API URL, clone/archive URL, branch/ref, PR prose, worker identity, or Check Run credential.
 
 Future source results and worker results are freshness-checked against request ID, target ID, job ID, generation, current PR state, attempt state, and runner tier. Stale source/worker results cannot make superseded work current. Because GR-15B2 emits no assignment, otherwise well-formed hardened-container or microvm worker results remain `unexpected-result` until GR-15C.
 

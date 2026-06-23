@@ -144,11 +144,58 @@ func (s *Store) initialize(ctx context.Context) error {
 	if _, err := s.db.ExecContext(ctx, schemaSQL); err != nil {
 		return wrap(CodeMigrationFailed, "schema", "schema initialization failed", err)
 	}
+	if err := s.ensureSourceRequestColumns(ctx); err != nil {
+		return err
+	}
 	if err := s.bindMetadata(ctx); err != nil {
 		return err
 	}
 	return s.quickCheck(ctx)
 }
+func (s *Store) ensureSourceRequestColumns(ctx context.Context) error {
+	rows, err := s.db.QueryContext(ctx, `PRAGMA table_info(source_requests)`)
+	if err != nil {
+		return wrap(CodeDatabaseSchemaInvalid, "schema", "source_requests schema inspection failed", err)
+	}
+	defer rows.Close()
+	found := map[string]bool{}
+	for rows.Next() {
+		var cid int
+		var name, typ string
+		var notnull int
+		var dflt any
+		var pk int
+		if err := rows.Scan(&cid, &name, &typ, &notnull, &dflt, &pk); err != nil {
+			return wrap(CodeDatabaseSchemaInvalid, "schema", "source_requests schema row rejected", err)
+		}
+		found[name] = true
+	}
+	if err := rows.Err(); err != nil {
+		return wrap(CodeDatabaseSchemaInvalid, "schema", "source_requests schema rows failed", err)
+	}
+	columns := []struct {
+		name string
+		sql  string
+	}{
+		{"pull_request_number", `ALTER TABLE source_requests ADD COLUMN pull_request_number INTEGER NOT NULL DEFAULT 0`},
+		{"source_metadata_digest", `ALTER TABLE source_requests ADD COLUMN source_metadata_digest TEXT`},
+		{"source_import_profile_version", `ALTER TABLE source_requests ADD COLUMN source_import_profile_version TEXT`},
+		{"source_object_format", `ALTER TABLE source_requests ADD COLUMN source_object_format TEXT`},
+		{"source_base_tree_id", `ALTER TABLE source_requests ADD COLUMN source_base_tree_id TEXT`},
+		{"source_head_tree_id", `ALTER TABLE source_requests ADD COLUMN source_head_tree_id TEXT`},
+		{"source_limitations_json", `ALTER TABLE source_requests ADD COLUMN source_limitations_json TEXT`},
+	}
+	for _, col := range columns {
+		if found[col.name] {
+			continue
+		}
+		if _, err := s.db.ExecContext(ctx, col.sql); err != nil {
+			return wrap(CodeMigrationFailed, "schema", "source_requests source-result migration failed", err)
+		}
+	}
+	return nil
+}
+
 func (s *Store) execPragmas(ctx context.Context) error {
 	ps := []string{fmt.Sprintf("PRAGMA application_id=%d", applicationID), "PRAGMA journal_mode=WAL", "PRAGMA synchronous=FULL", "PRAGMA foreign_keys=ON", "PRAGMA trusted_schema=OFF", "PRAGMA recursive_triggers=OFF", fmt.Sprintf("PRAGMA busy_timeout=%d", s.limits.BusyTimeoutMilliseconds), fmt.Sprintf("PRAGMA max_page_count=%d", s.limits.MaxDatabaseBytes/4096)}
 	for _, p := range ps {
@@ -481,7 +528,7 @@ func insertTargetJobAttemptSource(ctx context.Context, tx *sql.Tx, target github
 	if _, err := tx.ExecContext(ctx, `INSERT INTO attempts(attempt_id,job_id,target_id,generation,attempt_number,reason,state,created_at) VALUES(?,?,?,?,?,?,?,?)`, attempt.ID, attempt.JobID, attempt.TargetID, attempt.Generation, attempt.AttemptNumber, string(attempt.Reason), string(githubapp.AttemptStateQueued), formatTime(now)); err != nil {
 		return wrap(CodeTransactionFailed, "attempt", "attempt insert failed", err)
 	}
-	req := SourceImportRequest{SchemaVersion: SchemaSourceImportRequestV1Alpha1, ID: srcID, TargetID: job.TargetID, JobID: job.ID, Generation: job.Generation, InstallationID: target.InstallationID, Base: RouteHint{RepositoryID: snap.Base.RepositoryID, Owner: snap.Base.Owner, Name: snap.Base.Name, CommitID: snap.Base.CommitID}, Head: RouteHint{RepositoryID: snap.Head.RepositoryID, Owner: snap.Head.Owner, Name: snap.Head.Name, CommitID: snap.Head.CommitID}, ControllerProfileVersion: ControllerProfileAdvisoryV1Alpha1, State: SourceStatePending, CreatedAt: now}
+	req := SourceImportRequest{SchemaVersion: SchemaSourceImportRequestV1Alpha1, ID: srcID, TargetID: job.TargetID, JobID: job.ID, Generation: job.Generation, InstallationID: target.InstallationID, PullRequestNumber: snap.Number, Base: RouteHint{RepositoryID: snap.Base.RepositoryID, Owner: snap.Base.Owner, Name: snap.Base.Name, CommitID: snap.Base.CommitID}, Head: RouteHint{RepositoryID: snap.Head.RepositoryID, Owner: snap.Head.Owner, Name: snap.Head.Name, CommitID: snap.Head.CommitID}, ControllerProfileVersion: ControllerProfileAdvisoryV1Alpha1, State: SourceStatePending, CreatedAt: now}
 	return insertSourceRequest(ctx, tx, req)
 }
 func insertSourceRequest(ctx context.Context, tx *sql.Tx, req SourceImportRequest) error {
@@ -490,7 +537,7 @@ func insertSourceRequest(ctx context.Context, tx *sql.Tx, req SourceImportReques
 	}
 	b := req.Base
 	h := req.Head
-	_, err := tx.ExecContext(ctx, `INSERT INTO source_requests(request_id,target_id,job_id,generation,installation_id,base_repository_id,base_owner,base_name,base_commit_id,head_repository_id,head_owner,head_name,head_commit_id,state,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`, req.ID, req.TargetID, req.JobID, req.Generation, req.InstallationID, b.RepositoryID, b.Owner, b.Name, b.CommitID, h.RepositoryID, h.Owner, h.Name, h.CommitID, string(req.State), formatTime(req.CreatedAt))
+	_, err := tx.ExecContext(ctx, `INSERT INTO source_requests(request_id,target_id,job_id,generation,installation_id,pull_request_number,base_repository_id,base_owner,base_name,base_commit_id,head_repository_id,head_owner,head_name,head_commit_id,state,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`, req.ID, req.TargetID, req.JobID, req.Generation, req.InstallationID, req.PullRequestNumber, b.RepositoryID, b.Owner, b.Name, b.CommitID, h.RepositoryID, h.Owner, h.Name, h.CommitID, string(req.State), formatTime(req.CreatedAt))
 	if err != nil {
 		return wrap(CodeTransactionFailed, "source", "source insert failed", err)
 	}
@@ -498,7 +545,7 @@ func insertSourceRequest(ctx context.Context, tx *sql.Tx, req SourceImportReques
 }
 
 func validateSourceImportRequest(req SourceImportRequest) error {
-	if req.ID == "" || req.TargetID == "" || req.JobID == "" || req.Generation <= 0 || req.InstallationID <= 0 || req.ControllerProfileVersion != ControllerProfileAdvisoryV1Alpha1 {
+	if req.ID == "" || req.TargetID == "" || req.JobID == "" || req.Generation <= 0 || req.InstallationID <= 0 || req.PullRequestNumber <= 0 || req.ControllerProfileVersion != ControllerProfileAdvisoryV1Alpha1 {
 		return errCode(CodeRecordInvalid, "source", "source request rejected", nil)
 	}
 	if req.Base.RepositoryID <= 0 || req.Head.RepositoryID <= 0 || !validRouteHint(req.Base.Owner) || !validRouteHint(req.Base.Name) || !validRouteHint(req.Head.Owner) || !validRouteHint(req.Head.Name) || !validGitObjectID(req.Base.CommitID) || !validGitObjectID(req.Head.CommitID) {
@@ -552,7 +599,7 @@ func (s *Store) GetSourceImportRequest(ctx context.Context, id string) (SourceIm
 	defer s.mu.Unlock()
 	var r SourceImportRequest
 	var created string
-	err := s.db.QueryRowContext(ctx, `SELECT request_id,target_id,job_id,generation,installation_id,base_repository_id,base_owner,base_name,base_commit_id,head_repository_id,head_owner,head_name,head_commit_id,state,created_at FROM source_requests WHERE request_id=?`, id).Scan(&r.ID, &r.TargetID, &r.JobID, &r.Generation, &r.InstallationID, &r.Base.RepositoryID, &r.Base.Owner, &r.Base.Name, &r.Base.CommitID, &r.Head.RepositoryID, &r.Head.Owner, &r.Head.Name, &r.Head.CommitID, &r.State, &created)
+	err := s.db.QueryRowContext(ctx, `SELECT request_id,target_id,job_id,generation,installation_id,pull_request_number,base_repository_id,base_owner,base_name,base_commit_id,head_repository_id,head_owner,head_name,head_commit_id,state,created_at FROM source_requests WHERE request_id=?`, id).Scan(&r.ID, &r.TargetID, &r.JobID, &r.Generation, &r.InstallationID, &r.PullRequestNumber, &r.Base.RepositoryID, &r.Base.Owner, &r.Base.Name, &r.Base.CommitID, &r.Head.RepositoryID, &r.Head.Owner, &r.Head.Name, &r.Head.CommitID, &r.State, &created)
 	if err != nil {
 		return r, wrap(CodeRecordInvalid, "source", "source request missing", err)
 	}

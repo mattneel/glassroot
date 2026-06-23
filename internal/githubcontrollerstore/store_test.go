@@ -41,7 +41,7 @@ func TestApplyEligibleSnapshotCreatesGenerationJobAttemptAndCredentialFreeSource
 	if req.TargetID != result.TargetID || req.JobID != result.JobID || req.Generation != 1 || req.InstallationID != 42 {
 		t.Fatalf("bad source request: %#v", req)
 	}
-	if req.TokenCanaryForTest != "" || strings.Contains(req.Base.Owner, "token") || strings.Contains(req.Head.Owner, "token") {
+	if strings.Contains(req.Base.Owner, "token") || strings.Contains(req.Head.Owner, "token") {
 		t.Fatalf("credential-like field persisted: %#v", req)
 	}
 	current, err := store.GetCurrentPRState(ctx, githubcontrollerstore.PRKey{InstallationID: 42, BaseRepositoryID: 101, PullRequestNumber: 7})

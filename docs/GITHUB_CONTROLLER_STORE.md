@@ -69,11 +69,11 @@ Request IDs use domain:
 glassroot.dev/github-source-import-request-id/v1\0
 ```
 
-Each request contains target ID, job ID, generation, installation ID, base/head repository IDs, bounded route hints, exact commits, controller profile version, state, sequence, and lease metadata. Requests contain no credentials and no URLs.
+Each request contains target ID, job ID, generation, installation ID, pull-request number, base/head repository IDs, bounded route hints, exact commits, controller profile version, state, sequence, and lease metadata. Requests contain no credentials and no URLs.
 
 Lease states are `pending`, `leased`, `completed`, `failed`, `superseded`, and `cancelled`. Claims are ordered by durable sequence. Expired leases are reclaimable. Acknowledge/release requires exact owner and lease generation. Superseded/cancelled requests are never claimed.
 
-A current successful source result moves the job to `awaiting-runner` and does not emit a worker assignment. A current failed source result marks the job failed. Stale or mismatched source results cannot advance current work.
+A current successful source result includes only SourceStoreID, metadata digest, import profile, object format, exact base/head commit and tree IDs, and fixed limitations; it moves the job to `awaiting-runner` and does not emit a worker assignment. A current failed source result marks the job failed. Stale or mismatched source results cannot advance current work.
 
 ## Check binding registry
 

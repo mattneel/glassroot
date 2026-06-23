@@ -38,6 +38,14 @@ const (
 	CodeBlobSizeMismatch            ErrorCode = "blob-size-mismatch"
 	CodeBlobObjectIDMismatch        ErrorCode = "blob-object-id-mismatch"
 	CodeContextCancelled            ErrorCode = "context-cancelled"
+	CodeImporterConfigInvalid       ErrorCode = "importer-config-invalid"
+	CodeGitInitFailed               ErrorCode = "git-init-failed"
+	CodeGitFetchFailed              ErrorCode = "git-fetch-failed"
+	CodeShallowMetadataInvalid      ErrorCode = "shallow-metadata-invalid"
+	CodeUnexpectedRef               ErrorCode = "unexpected-ref"
+	CodeRemoteConfigPersisted       ErrorCode = "remote-config-persisted"
+	CodeCredentialMaterialPersisted ErrorCode = "credential-material-persisted"
+	CodeImportLayoutInvalid         ErrorCode = "import-layout-invalid"
 )
 
 func (c ErrorCode) Error() string { return string(c) }
@@ -72,6 +80,14 @@ var (
 	ErrBlobSizeMismatch            error = CodeBlobSizeMismatch
 	ErrBlobObjectIDMismatch        error = CodeBlobObjectIDMismatch
 	ErrContextCancelled            error = CodeContextCancelled
+	ErrImporterConfigInvalid       error = CodeImporterConfigInvalid
+	ErrGitInitFailed               error = CodeGitInitFailed
+	ErrGitFetchFailed              error = CodeGitFetchFailed
+	ErrShallowMetadataInvalid      error = CodeShallowMetadataInvalid
+	ErrUnexpectedRef               error = CodeUnexpectedRef
+	ErrRemoteConfigPersisted       error = CodeRemoteConfigPersisted
+	ErrCredentialMaterialPersisted error = CodeCredentialMaterialPersisted
+	ErrImportLayoutInvalid         error = CodeImportLayoutInvalid
 )
 
 type Error struct {
