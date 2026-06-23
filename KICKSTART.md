@@ -469,7 +469,7 @@ metadata:
 spec:
   environment:
     # Images must resolve to an immutable digest before execution.
-    image: docker.io/library/golang:1.26@sha256:REPLACE_WITH_REAL_DIGEST
+    image: docker.io/library/golang:1.26@sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
     workdir: /workspace
 
   resources:
@@ -944,17 +944,31 @@ Acceptance criteria:
 - unit tests prove the head cannot increase network or resource privileges;
 - no target code executes.
 
-### GR-6: Safe revision materializer
+### GR-6A: Trusted Git object reader
 
 Acceptance criteria:
 
-- resolve immutable commit IDs;
-- export tracked files into isolated directories;
-- disable hooks, filters, submodules, LFS fetches, and global/system config;
-- reject traversal and unsafe archive entries;
-- enforce size/count/time limits;
-- hash the result;
-- include malicious path test fixtures.
+- opens only a control-plane-created bare Git store;
+- resolves approved selectors to full immutable commit IDs;
+- uses only sanitized, bounded, read-only Git plumbing;
+- reads raw tree and blob objects without filters or checkout;
+- rejects alternates, partial clones, unsafe metadata, and malformed paths;
+- implements RevisionFileSource;
+- does not create a target workspace or execute target code.
+
+### GR-6B: Safe revision materializer
+
+Acceptance criteria:
+
+- exports the exact validated tree into a private isolated directory;
+- uses traversal-resistant filesystem operations;
+- rejects unsafe paths and symlink targets;
+- preserves only reviewed file modes;
+- reports gitlinks and LFS pointers without fetching;
+- enforces file, byte, path, depth, count, and time limits;
+- computes a deterministic materialized-tree digest;
+- cleans partial output after any failure;
+- never executes target code.
 
 ### GR-7: Runner interface and fake runner
 

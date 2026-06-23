@@ -47,3 +47,15 @@ Head inspection failures are not treated as unchanged configuration. Unsupported
 ## Out of scope for GR-5
 
 GR-5 does not introduce Git integration, source checkout, source materialization, waivers, platform policy merging, runners, evidence I/O, policy findings, report rendering, target-code execution, or a sandbox. A malicious administrator who controls the trusted base branch or future organization policy remains initially out of scope.
+
+## Git object-reader trust boundary
+
+GR-6A reads Git objects from a bare object store created and owned by the Glassroot control plane. The Git directory itself is not supplied directly by the target repository. By contract, its config, hooks directory, refs storage, and object-store layout are control-plane metadata, and the analyzed workload cannot write to it during a repository operation.
+
+Repository content remains hostile. Commit, tree, blob, tag, ref, and path data may be influenced by the target contributor and must be parsed as untrusted data. Exact commit object IDs replace symbolic refs before inspection; after resolution, tree and blob reads use immutable object IDs rather than re-reading refs.
+
+Arbitrary attacker-provided `.git` directories are unsupported. Concurrent object-store mutation, ingestion, cloning, and fetch into the trusted store are outside the GR-6A contract. Alternates, HTTP alternates, grafts, partial clones, promisor remotes, promisor pack markers, unsafe repository extensions, and worktree indirection are rejected.
+
+Git subprocesses in this component run with a fixed command inventory, an absolute Git executable, bounded stdout and stderr, and a sanitized environment. The component grants Git no network permission by command policy: it does not clone, fetch, invoke remote helpers, use credentials, or perform lazy fetches. Hooks, filters, text conversion, Git LFS, archive attributes, and submodule traversal are not invoked. Tracked Git LFS pointer files are raw blob contents; gitlinks are reported as gitlink entries and not traversed.
+
+Raw Git object parsing and Git subprocess behavior remain attack surfaces. GR-6B is responsible for traversal-resistant filesystem writes and host-platform materialization checks. GR-6A does not create a target workspace, run a workload, add a runner, or provide a sandbox.
