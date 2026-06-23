@@ -25,17 +25,19 @@ type WebhookProjection struct {
 }
 
 type PullRequestProjection struct {
-	Action            string `json:"action"`
-	InstallationID    int64  `json:"installationId"`
-	RepositoryID      int64  `json:"repositoryId"`
-	RepositoryOwnerID int64  `json:"repositoryOwnerId,omitempty"`
-	PullRequestNumber int64  `json:"pullRequestNumber"`
-	BaseSHA           string `json:"baseSha"`
-	HeadSHA           string `json:"headSha"`
-	HeadRepositoryID  int64  `json:"headRepositoryId,omitempty"`
-	Draft             bool   `json:"draft"`
-	Closed            bool   `json:"closed"`
-	Merged            bool   `json:"merged"`
+	Action              string `json:"action"`
+	InstallationID      int64  `json:"installationId"`
+	RepositoryID        int64  `json:"repositoryId"`
+	RepositoryOwnerID   int64  `json:"repositoryOwnerId,omitempty"`
+	BaseRepositoryOwner string `json:"baseRepositoryOwner,omitempty"`
+	BaseRepositoryName  string `json:"baseRepositoryName,omitempty"`
+	PullRequestNumber   int64  `json:"pullRequestNumber"`
+	BaseSHA             string `json:"baseSha"`
+	HeadSHA             string `json:"headSha"`
+	HeadRepositoryID    int64  `json:"headRepositoryId,omitempty"`
+	Draft               bool   `json:"draft"`
+	Closed              bool   `json:"closed"`
+	Merged              bool   `json:"merged"`
 }
 
 type CheckRunProjection struct {
@@ -100,7 +102,11 @@ func ProjectWebhook(event string, body []byte, limits Limits) (WebhookProjection
 		if err != nil {
 			return out, err
 		}
-		return WebhookProjection{Kind: ProjectionInstallation, Installation: &inst}, nil
+		kind := ProjectionInstallation
+		if event == "installation_repositories" {
+			kind = ProjectionInstallationRepositories
+		}
+		return WebhookProjection{Kind: kind, Installation: &inst}, nil
 	case "ping":
 		return WebhookProjection{Kind: ProjectionPing}, nil
 	default:
@@ -122,9 +128,11 @@ type pullRequestPayload struct {
 		ID int64 `json:"id"`
 	} `json:"installation"`
 	Repository struct {
-		ID    int64 `json:"id"`
+		ID    int64  `json:"id"`
+		Name  string `json:"name"`
 		Owner struct {
-			ID int64 `json:"id"`
+			ID    int64  `json:"id"`
+			Login string `json:"login"`
 		} `json:"owner"`
 	} `json:"repository"`
 	PullRequest struct {
@@ -135,13 +143,21 @@ type pullRequestPayload struct {
 		Base   struct {
 			SHA  string `json:"sha"`
 			Repo struct {
-				ID int64 `json:"id"`
+				ID    int64  `json:"id"`
+				Name  string `json:"name"`
+				Owner struct {
+					Login string `json:"login"`
+				} `json:"owner"`
 			} `json:"repo"`
 		} `json:"base"`
 		Head struct {
 			SHA  string `json:"sha"`
 			Repo struct {
-				ID int64 `json:"id"`
+				ID    int64  `json:"id"`
+				Name  string `json:"name"`
+				Owner struct {
+					Login string `json:"login"`
+				} `json:"owner"`
 			} `json:"repo"`
 		} `json:"head"`
 	} `json:"pull_request"`
@@ -194,7 +210,17 @@ func projectPullRequest(p pullRequestPayload, limits Limits) (PullRequestProject
 	if len(p.Action) > limits.MaxProjectionStringBytes {
 		return PullRequestProjection{}, errCode(CodeProjectionInvalid, "projection", "action too large", nil)
 	}
-	return PullRequestProjection{Action: p.Action, InstallationID: p.Installation.ID, RepositoryID: p.Repository.ID, RepositoryOwnerID: p.Repository.Owner.ID, PullRequestNumber: p.PullRequest.Number, BaseSHA: p.PullRequest.Base.SHA, HeadSHA: p.PullRequest.Head.SHA, HeadRepositoryID: p.PullRequest.Head.Repo.ID, Draft: p.PullRequest.Draft, Closed: p.PullRequest.State == "closed", Merged: p.PullRequest.Merged}, nil
+	owner, name := p.PullRequest.Base.Repo.Owner.Login, p.PullRequest.Base.Repo.Name
+	if owner == "" {
+		owner = p.Repository.Owner.Login
+	}
+	if name == "" {
+		name = p.Repository.Name
+	}
+	if !validRouteHint(owner) || !validRouteHint(name) {
+		return PullRequestProjection{}, errCode(CodeProjectionInvalid, "projection", "repository route hint rejected", nil)
+	}
+	return PullRequestProjection{Action: p.Action, InstallationID: p.Installation.ID, RepositoryID: p.Repository.ID, RepositoryOwnerID: p.Repository.Owner.ID, BaseRepositoryOwner: owner, BaseRepositoryName: name, PullRequestNumber: p.PullRequest.Number, BaseSHA: p.PullRequest.Base.SHA, HeadSHA: p.PullRequest.Head.SHA, HeadRepositoryID: p.PullRequest.Head.Repo.ID, Draft: p.PullRequest.Draft, Closed: p.PullRequest.State == "closed", Merged: p.PullRequest.Merged}, nil
 }
 
 func projectCheckRun(p checkRunPayload, limits Limits) (CheckRunProjection, error) {
@@ -234,3 +260,15 @@ func projectInstallation(p installationPayload) (InstallationProjection, error) 
 }
 
 func validGitObjectID(s string) bool { return isLowerHex(s, 40) || isLowerHex(s, 64) }
+
+func validRouteHint(s string) bool {
+	if s == "" || len(s) > 256 || s == "." || s == ".." {
+		return false
+	}
+	for _, r := range s {
+		if r < 0x20 || r == 0x7f || r == '/' || r == '?' || r == '#' || r == '\\' {
+			return false
+		}
+	}
+	return true
+}

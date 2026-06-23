@@ -71,3 +71,7 @@ func zero(b []byte) {
 		b[i] = 0
 	}
 }
+
+func NewTokenLeaseForTest(meta TokenMetadata, token []byte) *TokenLease {
+	return newTokenLease(meta, token)
+}

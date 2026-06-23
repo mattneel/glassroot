@@ -664,3 +664,48 @@ GR-15B1 does not reconcile pull requests, fetch repository content, ingest sourc
 publish checks, schedule or run workers, execute target code, authorize public PR
 execution, or introduce any sandbox, provenance, authentication, attestation, or
 safety claim.
+
+## GitHub controller reconciliation (GR-15B2)
+
+GR-15B2 adds durable controller reconciliation but no source ingestion, worker
+assignment, execution, or publication. The controller holds no App private key
+and no webhook secret. It transiently obtains one-repository `pull-request-read`
+installation tokens from the GR-15B1 broker and closes each token lease after the
+single current-PR read. Tokens are not persisted, logged, placed in IDs, source
+requests, jobs, attempts, worker-facing contracts, or errors.
+
+Webhook data remains a hint. Event actions and event-reported base/head SHAs do
+not form target authority. The controller revalidates current PR state through
+the fixed GitHub REST endpoint `GET /repos/{owner}/{repo}/pulls/{pull_number}`.
+GitHub API current state, installation identity, numeric repository IDs, PR
+number, and exact base/head commit IDs are the reconciliation inputs. Route
+owner/name strings are bounded path hints and are not identity authority.
+
+Per-PR reconciliation leases serialize API snapshots for the same installation,
+base repository, and PR number. Controller generations are monotonic and never
+decrease. Delayed or out-of-order webhook deliveries cannot restore an older
+target; duplicate receiver outbox processing is idempotent by outbox ID and
+projection digest. Controller state commits before the receiver outbox is
+acknowledged, so a crash may cause reprocessing but not duplicate current
+targets, jobs, initial attempts, or source-import requests.
+
+Source-import requests are credential-free durable messages for GR-15B3. They
+contain numeric repository IDs, bounded route hints, exact commits, target/job
+IDs, and generation; they contain no token, API URL, clone/archive URL, branch,
+PR prose, worker identity, Check Run credential, host path, or source content.
+Stale source results and stale worker results cannot become current. Fake,
+docker-dev, and development-only runner results are rejected; no WorkerAssignment
+is emitted in GR-15B2.
+
+Installation lifecycle events are conservative invalidation hints. Deletion,
+suspension, and repository removal can cancel affected current jobs and advance
+generations; creation, unsuspension, and repository addition cannot authorize or
+restore work without a later PR API reconciliation.
+
+The token broker and GitHub API are trusted dependencies. GitHub API responses
+remain external platform input and are bounded before use. Controller database
+compromise, SQLite/filesystem loss, malicious local filesystems, route renames,
+private fork inaccessibility, delayed installation events, clock errors, or lease
+expiry races can forge, drop, delay, or misclassify controller work. Public PR
+execution remains prohibited, and GR-15B2 introduces no sandbox, provenance,
+authentication, attestation, safety, or exactly-once claim.

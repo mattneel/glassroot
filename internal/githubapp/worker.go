@@ -35,8 +35,8 @@ func ValidateWorkerAssignment(a WorkerAssignment) error {
 	if a.SchemaVersion != SchemaGitHubWorkerAssignmentV1Alpha1 || !validateAttemptID(a.AttemptID) || !validateTargetID(a.TargetID) || a.ControllerGeneration <= 0 {
 		return errCode(CodeInvalidWorkerAssignment, "worker", "assignment identity invalid", nil)
 	}
-	if a.RequiredRunnerTier != RunnerTierHardenedContainer {
-		return errCode(CodeInvalidWorkerAssignment, "worker", "public PR worker assignment requires hardened-container", nil)
+	if a.RequiredRunnerTier != RunnerTierHardenedContainer && a.RequiredRunnerTier != RunnerTierMicroVM {
+		return errCode(CodeInvalidWorkerAssignment, "worker", "public PR worker assignment requires hardened-container or microvm", nil)
 	}
 	if !validGitObjectID(a.BaseCommitID) || !validGitObjectID(a.HeadCommitID) || !validateDigest(a.PlanDigest) {
 		return errCode(CodeInvalidWorkerAssignment, "worker", "assignment source or plan invalid", nil)

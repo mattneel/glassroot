@@ -1275,13 +1275,19 @@ Acceptance criteria:
 Acceptance criteria:
 
 - consumes GR-15A outbox records at least once;
-- obtains pull-request-read tokens through GR-15B1;
-- revalidates current installation, repository, and PR state;
-- creates monotonic immutable target/job generations;
-- handles draft, closed, synchronize, and rerequest state;
+- obtains only pull-request-read tokens through GR-15B1;
+- revalidates current installation, repository, and PR state through the exact pull-request REST endpoint;
+- treats webhook SHAs and actions as hints rather than authority;
+- creates immutable targets, jobs, attempts, and monotonic PR generations;
+- handles draft, closed, synchronize, installation lifecycle, and current-target rerequest state;
+- creates credential-free source-import requests for GR-15B3;
 - rejects stale results;
-- requests source ingestion without passing credentials to workers;
+- emits no WorkerAssignment and passes no GitHub credential to workers;
 - performs no target execution or publication.
+
+GR-15B2 implementation is present. It does not mark M5 complete, does not make
+public execution eligible, and does not change GR-14 or M3 runtime-validation
+status.
 
 ### GR-15B3: Exact source ingestion
 

@@ -191,10 +191,13 @@ func TestJSONPreflightAndProjection(t *testing.T) {
 		t.Fatalf("unexpected pr projection %#v", pr)
 	}
 	encoded, _ := json.Marshal(projection)
-	for _, forbidden := range []string{"Never retain me", "feature/prose", "octocat", "https://", "do not run"} {
+	for _, forbidden := range []string{"Never retain me", "feature/prose", "https://", "do not run"} {
 		if strings.Contains(string(encoded), forbidden) {
 			t.Fatalf("projection retained forbidden field %q in %s", forbidden, encoded)
 		}
+	}
+	if pr.BaseRepositoryOwner != "octocat" || pr.BaseRepositoryName != "repo" {
+		t.Fatalf("missing bounded route hints %#v", pr)
 	}
 	projection, err = ProjectWebhook("check_run", []byte(validCheckRunPayload()), limits)
 	if err != nil || projection.CheckRun == nil || projection.CheckRun.Action != "rerequested" || projection.CheckRun.CheckRunID != 555 || projection.CheckRun.AppID != 999 || projection.CheckRun.ExternalID != "gr-"+strings.Repeat("a", 64) {

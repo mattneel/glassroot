@@ -6,6 +6,7 @@ type RunnerTier string
 
 const (
 	RunnerTierHardenedContainer RunnerTier = "hardened-container"
+	RunnerTierMicroVM           RunnerTier = "microvm"
 	RunnerTierDevelopmentOnly   RunnerTier = "development-only"
 	RunnerTierDockerDev         RunnerTier = "docker-dev"
 	RunnerTierFake              RunnerTier = "fake"
@@ -40,7 +41,7 @@ type AnalysisAttempt struct {
 }
 
 func NewAnalysisJob(target AnalysisTarget, generation int64, profile string, tier RunnerTier) (AnalysisJob, error) {
-	if tier != RunnerTierHardenedContainer {
+	if tier != RunnerTierHardenedContainer && tier != RunnerTierMicroVM {
 		return AnalysisJob{}, errCode(CodeInvalidJob, "job", "public PR jobs require hardened-container or stronger", nil)
 	}
 	if generation <= 0 || generation > AbsoluteMaxControllerGeneration || profile == "" || hasControl(profile) {

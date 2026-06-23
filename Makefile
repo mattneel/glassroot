@@ -1,7 +1,7 @@
 GO ?= go
 GOFMT ?= gofmt
 
-.PHONY: fmt fmt-check vet lint test test-race test-integration schema-check test-fuzz-seeds test-gitstore test-gitstore-fuzz-seeds test-materialize test-materialize-fuzz-seeds test-pipeline test-pipeline-fuzz-seeds test-runner test-runner-fuzz-seeds test-evidence test-evidence-fuzz-seeds test-evidence-reader test-evidence-reader-fuzz-seeds test-observe test-observe-fuzz-seeds test-compare test-compare-fuzz-seeds test-policy test-policy-fuzz-seeds test-waiver test-waiver-fuzz-seeds test-policy-application test-report test-report-fuzz-seeds test-inspect test-inspect-fuzz-seeds test-demo test-demo-fuzz-seeds demo-golden-check test-dockerengine test-dockerdev test-dockerdev-fuzz-seeds test-dockerdev-integration test-artifactcollect test-artifactcollect-fuzz-seeds test-localrun test-localrun-fuzz-seeds test-localrun-integration test-gvisor-monitor test-gvisor-spike test-gvisor-spike-fuzz-seeds test-gvisor-spike-integration test-githubapp test-githubapp-fuzz-seeds test-githubreceiver test-githubinbox test-githubreceiver-fuzz-seeds test-githubauth test-githubapi test-githubbroker test-githubbroker-fuzz-seeds test-github-broker-integration build build-receiver build-broker generate verify
+.PHONY: fmt fmt-check vet lint test test-race test-integration schema-check test-fuzz-seeds test-gitstore test-gitstore-fuzz-seeds test-materialize test-materialize-fuzz-seeds test-pipeline test-pipeline-fuzz-seeds test-runner test-runner-fuzz-seeds test-evidence test-evidence-fuzz-seeds test-evidence-reader test-evidence-reader-fuzz-seeds test-observe test-observe-fuzz-seeds test-compare test-compare-fuzz-seeds test-policy test-policy-fuzz-seeds test-waiver test-waiver-fuzz-seeds test-policy-application test-report test-report-fuzz-seeds test-inspect test-inspect-fuzz-seeds test-demo test-demo-fuzz-seeds demo-golden-check test-dockerengine test-dockerdev test-dockerdev-fuzz-seeds test-dockerdev-integration test-artifactcollect test-artifactcollect-fuzz-seeds test-localrun test-localrun-fuzz-seeds test-localrun-integration test-gvisor-monitor test-gvisor-spike test-gvisor-spike-fuzz-seeds test-gvisor-spike-integration test-githubapp test-githubapp-fuzz-seeds test-githubreceiver test-githubinbox test-githubreceiver-fuzz-seeds test-githubauth test-githubapi test-githubbroker test-githubbroker-fuzz-seeds test-githubcontroller test-githubcontrollerstore test-githubcontroller-fuzz-seeds test-github-broker-integration test-github-controller-integration build build-receiver build-broker build-controller generate verify
 
 fmt:
 	$(GOFMT) -w .
@@ -48,8 +48,9 @@ test-fuzz-seeds:
 	$(GO) test ./internal/githubreceiver -run 'FuzzHandleGitHubWebhookRequest|FuzzValidateReceiverFilesystemPaths' -count=1
 	$(GO) test ./internal/githubinbox -run 'FuzzDecodeInboxRecord|FuzzDecideInboxAcceptance|FuzzTransitionOutboxLease' -count=1
 	$(GO) test ./internal/githubauth -run 'FuzzParseGitHubAppPrivateKey|FuzzEncodeGitHubAppJWT' -count=1
-	$(GO) test ./internal/githubapi -run 'FuzzDecodeGitHubTokenResponse' -count=1
+	$(GO) test ./internal/githubapi -run 'FuzzDecodeGitHubTokenResponse|FuzzDecodePullRequestSnapshot|FuzzValidateRepositoryRoute' -count=1
 	$(GO) test ./internal/githubbroker -run 'FuzzDecodeGitHubBrokerFrame|FuzzValidateTokenRequest' -count=1
+	$(GO) test ./internal/githubcontrollerstore -run 'FuzzReconcilePullRequestState|FuzzApplyControllerGeneration|FuzzValidateSourceImportRequest|FuzzClassifyWorkerResultFreshness' -count=1
 
 test-gitstore:
 	$(GO) test ./internal/gitstore -count=1
@@ -108,10 +109,21 @@ build-broker:
 	CGO_ENABLED=0 GOOS=linux GOARCH=arm64 $(GO) build -o "$$tmp" ./cmd/glassroot-credential-broker; \
 	rm -f "$$tmp"
 
+build-controller:
+	@tmp="$$(mktemp -t glassroot-controller.XXXXXX)"; \
+	$(GO) build -o "$$tmp" ./cmd/glassroot-controller; \
+	rm -f "$$tmp"; \
+	tmp="$$(mktemp -t glassroot-controller-linux-amd64.XXXXXX)"; \
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 $(GO) build -o "$$tmp" ./cmd/glassroot-controller; \
+	rm -f "$$tmp"; \
+	tmp="$$(mktemp -t glassroot-controller-linux-arm64.XXXXXX)"; \
+	CGO_ENABLED=0 GOOS=linux GOARCH=arm64 $(GO) build -o "$$tmp" ./cmd/glassroot-controller; \
+	rm -f "$$tmp"
+
 generate:
 	$(GO) generate ./...
 
-verify: fmt-check vet test schema-check test-gvisor-monitor test-githubreceiver test-githubinbox test-githubauth test-githubapi test-githubbroker build build-receiver build-broker
+verify: fmt-check vet test schema-check test-gvisor-monitor test-githubreceiver test-githubinbox test-githubauth test-githubapi test-githubbroker test-githubcontroller test-githubcontrollerstore build build-receiver build-broker build-controller
 
 
 test-evidence-reader:
@@ -256,3 +268,16 @@ test-githubbroker-fuzz-seeds:
 
 test-github-broker-integration:
 	GLASSROOT_GITHUB_BROKER_INTEGRATION=1 $(GO) test ./internal/githubapi -run TestGitHubBrokerIntegration -count=1
+
+test-githubcontroller:
+	$(GO) test ./internal/githubcontroller ./cmd/glassroot-controller -count=1
+
+test-githubcontrollerstore:
+	$(GO) test ./internal/githubcontrollerstore -count=1
+
+test-githubcontroller-fuzz-seeds:
+	$(GO) test ./internal/githubapi -run 'FuzzDecodePullRequestSnapshot|FuzzValidateRepositoryRoute' -count=1
+	$(GO) test ./internal/githubcontrollerstore -run 'FuzzReconcilePullRequestState|FuzzApplyControllerGeneration|FuzzValidateSourceImportRequest|FuzzClassifyWorkerResultFreshness' -count=1
+
+test-github-controller-integration:
+	GLASSROOT_GITHUB_CONTROLLER_INTEGRATION=1 $(GO) test ./internal/githubcontroller -run TestGitHubControllerIntegration -count=1

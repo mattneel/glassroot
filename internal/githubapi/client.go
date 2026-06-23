@@ -101,7 +101,7 @@ func (c *Client) IssueInstallationToken(ctx context.Context, req TokenRequest) (
 		return nil, err
 	}
 	var token tokenResponse
-	if err := c.doJSON(ctx, http.MethodPost, "/app/installations/"+strconv.FormatInt(req.InstallationID, 10)+"/access_tokens", body, &token); err != nil {
+	if err := c.doAppJSON(ctx, http.MethodPost, "/app/installations/"+strconv.FormatInt(req.InstallationID, 10)+"/access_tokens", body, &token); err != nil {
 		return nil, err
 	}
 	return validateTokenResponse(token, req, c.requestTime(), c.limits)
@@ -122,9 +122,23 @@ func validateTokenRequest(req TokenRequest) error {
 func (c *Client) requestTime() time.Time { return c.clock.Now().UTC().Round(0) }
 
 func (c *Client) getJSON(ctx context.Context, path string, out any) error {
-	return c.doJSON(ctx, http.MethodGet, path, nil, out)
+	return c.doAppJSON(ctx, http.MethodGet, path, nil, out)
 }
-func (c *Client) doJSON(ctx context.Context, method, path string, body []byte, out any) error {
+func (c *Client) doAppJSON(ctx context.Context, method, path string, body []byte, out any) error {
+	return c.doJSON(ctx, method, path, body, nil, out)
+}
+func (c *Client) doTokenJSON(ctx context.Context, method, path string, body []byte, token TokenUser, out any) error {
+	if token == nil {
+		return errCode(CodeAPIUnavailable, "token", "installation token required", nil)
+	}
+	var bearer string
+	if err := token.Use(func(b []byte) error { bearer = "Bearer " + string(b); return nil }); err != nil {
+		return wrap(CodeAPIUnavailable, "token", "installation token use failed", err)
+	}
+	defer func() { bearer = "" }()
+	return c.doJSON(ctx, method, path, body, func() (string, error) { return bearer, nil }, out)
+}
+func (c *Client) doJSON(ctx context.Context, method, path string, body []byte, bearer func() (string, error), out any) error {
 	ctx, cancel := context.WithTimeout(ctx, c.limits.RequestTimeout)
 	defer cancel()
 	u := url.URL{Scheme: "https", Host: "api.github.com", Path: path}
@@ -139,15 +153,27 @@ func (c *Client) doJSON(ctx context.Context, method, path string, body []byte, o
 	req.Header.Set("Accept", "application/vnd.github+json")
 	req.Header.Set("X-GitHub-Api-Version", GitHubAPIVersion)
 	req.Header.Set("User-Agent", UserAgent)
-	jwt, err := c.signer.SignJWT(c.identity, c.requestTime(), c.authLimits)
-	if err != nil {
-		return wrap(CodeAPIUnavailable, "jwt", "jwt sign failed", err)
-	}
-	defer jwt.Close()
 	var auth string
-	if err := jwt.Use(func(b []byte) error { auth = "Bearer " + string(b); return nil }); err != nil {
-		return wrap(CodeAPIUnavailable, "jwt", "jwt use failed", err)
+	if bearer != nil {
+		got, authErr := bearer()
+		if authErr != nil {
+			return authErr
+		}
+		auth = got
+	} else {
+		if c.signer == nil {
+			return errCode(CodeAPIUnavailable, "jwt", "jwt signer unavailable", nil)
+		}
+		jwt, err := c.signer.SignJWT(c.identity, c.requestTime(), c.authLimits)
+		if err != nil {
+			return wrap(CodeAPIUnavailable, "jwt", "jwt sign failed", err)
+		}
+		defer jwt.Close()
+		if err := jwt.Use(func(b []byte) error { auth = "Bearer " + string(b); return nil }); err != nil {
+			return wrap(CodeAPIUnavailable, "jwt", "jwt use failed", err)
+		}
 	}
+	defer func() { auth = "" }()
 	req.Header.Set("Authorization", auth)
 	if body != nil {
 		req.Header.Set("Content-Type", "application/json")
@@ -206,4 +232,27 @@ func statusError(status int) error {
 		return errCode(CodeAPIUnavailable, "response", "api unavailable", nil)
 	}
 	return errCode(CodeResponseInvalid, "response", "api status rejected", nil)
+}
+
+type InstallationClientConfig struct {
+	Transport http.RoundTripper
+	Limits    Limits
+}
+
+func NewInstallationClient(cfg InstallationClientConfig) (*Client, error) {
+	limits := cfg.Limits
+	if limits == (Limits{}) {
+		limits = DefaultLimits()
+	}
+	if err := validateLimits(limits); err != nil {
+		return nil, err
+	}
+	rt := cfg.Transport
+	if rt == nil {
+		rt = defaultTransport()
+	}
+	hc := &http.Client{Transport: rt, CheckRedirect: func(req *http.Request, via []*http.Request) error {
+		return errCode(CodeAPIRedirectRejected, "request", "redirect rejected", nil)
+	}}
+	return &Client{http: hc, limits: limits}, nil
 }
