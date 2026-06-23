@@ -1256,15 +1256,44 @@ GR-15A implementation is present. It does not mark M5 complete, does not make
 public execution eligible, and does not change GR-14 or M3 runtime-validation
 status.
 
-### GR-15B: Controller, credential broker, and source ingestion
+### GR-15B1: GitHub App credential broker
 
 Acceptance criteria:
 
-- revalidates exact PR state through authenticated GitHub API reads;
-- mints repository-scoped read tokens through a broker;
-- imports source into a control-plane bare Git store;
-- constructs immutable targets and plans;
-- ensures no credential reaches workers.
+- is the only component loading the App private key;
+- validates exact App identity and permission profile;
+- creates bounded RS256 App JWTs;
+- mints only one-repository, one-purpose installation tokens;
+- treats installation tokens as opaque secrets;
+- exposes tokens only through a private bounded Unix protocol;
+- persists and logs no credential;
+- workers receive no GitHub credential;
+- performs no source fetch, controller reconciliation, or publication.
+
+### GR-15B2: Controller reconciliation and durable job state
+
+Acceptance criteria:
+
+- consumes GR-15A outbox records at least once;
+- obtains pull-request-read tokens through GR-15B1;
+- revalidates current installation, repository, and PR state;
+- creates monotonic immutable target/job generations;
+- handles draft, closed, synchronize, and rerequest state;
+- rejects stale results;
+- requests source ingestion without passing credentials to workers;
+- performs no target execution or publication.
+
+### GR-15B3: Exact source ingestion
+
+Acceptance criteria:
+
+- obtains one-repository Contents-read tokens through GR-15B1;
+- imports exact base/head Git objects into a control-plane-created bare store;
+- never passes tokens to workers or sandboxes;
+- handles inaccessible/private fork heads explicitly;
+- verifies exact commit/tree identities;
+- runs existing gitstore preflight before handoff;
+- performs no target execution or publication.
 
 ### GR-15C: Hardened worker protocol
 

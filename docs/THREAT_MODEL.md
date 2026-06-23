@@ -637,3 +637,30 @@ The outbox is a future controller handoff only. GR-15A does not call GitHub APIs
 does not fetch source, does not mint tokens, does not schedule workers directly,
 does not publish Check Runs, and does not execute target code. Public PR
 execution remains prohibited.
+
+## GitHub App credential broker (GR-15B1)
+
+GR-15B1 introduces a dedicated local credential broker as the only component that
+loads the GitHub App private key. The receiver, future controller, future source
+ingester, workers, and publisher do not receive private-key bytes. The broker has
+no webhook secret, OAuth token, personal access token, source store, worker
+capability, Check publisher role, or target-execution path.
+
+Compromise of the broker or its host can mint installation tokens within the App
+registration grants. The App registration permission profile is therefore the
+outer privilege ceiling and is checked at startup. Each minted token is
+downscoped to exactly one repository ID and one read-only purpose: pull-request
+metadata reconciliation or source read. Tokens remain powerful short-lived
+secrets even when repository-scoped; they are opaque, variable-length values and
+are not logged, persisted, placed in IDs, or passed to workers.
+
+The private-key file, broker process, local clock, private Unix socket parent,
+and host filesystem are trusted control-plane state. The socket uses Linux peer
+UID checks and mode `0600`, but it is not a general security boundary; same-UID
+host compromise can request tokens. GitHub API responses are external platform
+input and are bounded and validated before use.
+
+GR-15B1 does not reconcile pull requests, fetch repository content, ingest source,
+publish checks, schedule or run workers, execute target code, authorize public PR
+execution, or introduce any sandbox, provenance, authentication, attestation, or
+safety claim.
