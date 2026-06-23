@@ -15,6 +15,9 @@ type Command struct {
 type ScenarioPlan struct {
 	ID                string                 `json:"id"`
 	Name              string                 `json:"name"`
+	Shell             string                 `json:"shell,omitempty"`
+	Run               string                 `json:"run,omitempty"`
+	Repetitions       int64                  `json:"repetitions,omitempty"`
 	Command           Command                `json:"command"`
 	ResourceLimits    ResourceLimits         `json:"resourceLimits"`
 	NetworkPolicy     NetworkPolicy          `json:"networkPolicy"`

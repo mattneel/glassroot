@@ -970,14 +970,29 @@ Acceptance criteria:
 - cleans partial output after any failure;
 - never executes target code.
 
-### GR-7: Runner interface and fake runner
+### GR-7A: Deterministic immutable run planner
 
 Acceptance criteria:
 
-- runner capabilities are explicit;
-- fake runner consumes a plan and emits deterministic events;
+- effective execution fields derive only from trusted-base configuration;
+- exact base/head commit, tree, and materialization identities are bound;
+- trusted platform ceilings are applied through failure-closed admission;
+- base/head scenario definitions are equivalent;
+- no host workspace paths or inherited environment enter the wire plan;
+- frozen plan JSON and its digest are deterministic;
+- planning executes nothing.
+
+### GR-7B: Runner interface and fake runner
+
+Acceptance criteria:
+
+- runner capabilities are explicit facts;
+- capability matching rejects unsupported plans;
+- fake runner consumes a finalized plan and emits deterministic events;
+- fake runner executes no process or target content;
 - cancellation and sink-failure behavior are tested;
-- no process runner or host-shell runner is introduced.
+- base/head fake runs share no mutable state;
+- no host-shell or host-process runner is introduced.
 
 ### GR-8: Evidence bundle writer/reader
 

@@ -73,3 +73,31 @@ The workspace is newly created with mode `0700`. The materializer preflights the
 Gitlinks are reported and omitted. Git LFS objects are not fetched; pointer files are materialized as their raw tracked blob bytes and may be annotated as pointers. Hooks, filters, text conversion, archive extraction, checkout, submodule initialization, network access, and target-code execution are not part of GR-6B.
 
 Partial output is destroyed on failure. A successful workspace still contains untrusted source data and must not be executed directly on the host. Future sandbox runners are responsible for executing workloads inside an explicit isolation boundary and must not treat configuration trust or materialization as sufficient isolation.
+
+## Deterministic planning boundary (GR-7A)
+
+The planner trusts GR-5's trusted-base configuration result and treats head
+configuration as hostile, non-authoritative proposed content. Head assessment
+metadata may explain what changed, but it cannot provide commands, resources,
+networking, collection rules, comparison rules, policy profile, or defaults for
+the effective run plan.
+
+The planner also trusts source descriptors produced by the GR-6B materializer,
+while validating that those descriptors are internally consistent and match the
+trusted base/head commit identities. Platform constraints are trusted
+control-plane input. A compromised planner or compromised platform-policy source
+is inside the trusted computing base.
+
+Planning never reads workspaces or repository files. Serialized plans contain
+shell and `run` strings as inert data, contain no host workspace paths or
+secrets, and include an explicit empty workload environment for v1alpha1. Exact
+commit IDs, tree IDs, object formats, and materialization digests bind the plan
+to immutable source identities so later symbolic-ref changes cannot reinterpret
+what was planned.
+
+Plan digests support reproducibility and integrity comparison for the current
+Glassroot plan encoder only. They are not authentication, signatures,
+authorization tokens, attestations, sandbox claims, or proof that source is safe.
+GR-7B and later runners must consume the finalized plan without reinterpreting or
+augmenting commands, limits, networking, or base/head trust semantics. No
+workload execution exists in GR-7A.

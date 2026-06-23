@@ -13,6 +13,16 @@ const (
 	RevisionKindHead RevisionKind = "head"
 )
 
+// GitObjectFormat identifies the object identity algorithm used by a Git
+// object store. It records Git object identity only; it is not a Glassroot
+// attestation or evidence digest.
+type GitObjectFormat string
+
+const (
+	GitObjectFormatSHA1   GitObjectFormat = "sha1"
+	GitObjectFormatSHA256 GitObjectFormat = "sha256"
+)
+
 // Limitation records incomplete evidence, unsupported observations, truncation,
 // or other uncertainty that must remain visible to policy and reporting layers.
 type Limitation struct {

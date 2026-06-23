@@ -123,3 +123,17 @@ Validation for GR-3 includes:
 - KICKSTART.md, especially sections 2.5, 4, 6, 9, 10, 13, and 16.
 - `docs/adr/0000-template.md`.
 - Go `encoding/json` package documentation and security considerations in the pinned Go 1.26.4 toolchain.
+
+### GR-7A additive run-plan fields
+
+GR-7A keeps the `glassroot.dev/run-plan/v1alpha1` schema-version value and adds
+optional run-plan fields for deterministic planning: Git object format, exact
+tree ID, trusted configuration provenance, execution environment image/workdir,
+collection, comparison, policy, platform ceilings, explicit scenario shell/run
+and repetitions, source summaries, and source limitations. These are additive
+fields only. Existing v1alpha1 compatibility fixtures are preserved, while a
+separate planner golden fixture records the current GR-7A output.
+
+The plan digest is computed outside the run-plan document and is not stored in
+the hashed model. It is tied to the GR-7A compact `encoding/json` output and does
+not make a canonical JSON or attestation claim.

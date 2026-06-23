@@ -196,6 +196,13 @@ func TestSchemaVersionAndEnumWireValues(t *testing.T) {
 		}
 	}
 
+	objectFormats := []struct{ got, want GitObjectFormat }{{GitObjectFormatSHA1, "sha1"}, {GitObjectFormatSHA256, "sha256"}}
+	for _, tt := range objectFormats {
+		if tt.got != tt.want {
+			t.Fatalf("git object format = %q, want %q", tt.got, tt.want)
+		}
+	}
+
 	isolationTiers := []struct{ got, want IsolationTier }{{IsolationTierFake, "fake"}, {IsolationTierDevelopmentOnly, "development-only"}, {IsolationTierHardenedContainer, "hardened-container"}, {IsolationTierMicroVM, "microvm"}}
 	for _, tt := range isolationTiers {
 		if tt.got != tt.want {
