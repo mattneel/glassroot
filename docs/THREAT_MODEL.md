@@ -346,3 +346,37 @@ signatures, authentication, authorization, provenance, attestations, or proof
 that observations are truthful. GR-11A introduces no CLI behavior, publishing,
 HTML renderer, signing, target execution, network access, workspace access,
 evidence-bundle mutation, or sandbox claim.
+
+
+## Inspect orchestration boundary (GR-11B)
+
+`glassroot inspect` combines several trusted transformations and can create
+misleading output if it mis-binds inputs or skips stages. The bundle directory,
+bare Git store, base commit, head commit, manifest-integrity mode, and
+evaluated-at time are separate explicit caller inputs. The bare Git store is
+trusted control-plane metadata, but commit, tree, and blob contents remain
+hostile repository data. Full explicit commit IDs prevent symbolic-ref
+reinterpretation; they do not authenticate the repository or prove ownership.
+
+Inspect opens evidence only through the GR-8B verifier and opens Git only through
+the GR-6A object reader. It does not read a working tree, discover a repository
+from the current directory, resolve branches or tags, fetch, clone, checkout,
+archive, invoke LFS, initialize submodules, access a network, execute target
+content, inspect logs, or inspect artifacts. Internal-consistency-only bundle
+verification is an explicit mode and remains visible in the report. Expected
+manifest digests are equality inputs, not authentication.
+
+Plan reconstruction binds bundle claims to trusted-base configuration and exact
+resolved commit/tree identities. Head configuration and head waivers are
+inspection-only and never become effective policy inputs for the current
+inspection. Base waivers remain trusted repository policy input but are applied
+only through the GR-10B exact-finding rules. The caller-provided evaluated-at
+time controls waiver expiry; a compromised clock source or caller can alter
+expiry decisions.
+
+Report output is produced only after complete supported reconstruction and GR-11A
+composition/rendering. Exit code 0 means only that the effective policy
+disposition was `passed`; it is not a safety proof. A compromised Git store,
+expected-digest custody process, inspector, host, or clock input can still
+produce misleading results. GR-11B introduces no signing, publishing,
+authentication, attestation, sandbox, provenance claim, or target execution.

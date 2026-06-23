@@ -44,10 +44,10 @@ func digestBytes(domain string, data []byte) model.Digest {
 	return model.Digest("sha256:" + hex.EncodeToString(h.Sum(nil)))
 }
 
-// DigestJSON returns the GR-9B behavioral-delta JSON digest for already frozen
-// delta bytes. It is a pure helper for downstream binding checks; it does not
-// parse, trust, or repair arbitrary delta documents.
-func DigestJSON(data []byte) model.Digest {
+// DigestBehavioralDeltaJSON returns the GR-9B behavioral-delta JSON digest for
+// already frozen delta bytes. It is format-specific and does not parse, trust,
+// or repair arbitrary JSON documents.
+func DigestBehavioralDeltaJSON(data []byte) model.Digest {
 	return digestBytes(deltaJSONDomain, data)
 }
 

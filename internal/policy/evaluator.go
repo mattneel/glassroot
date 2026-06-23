@@ -38,7 +38,7 @@ func (e *Evaluator) Evaluate(ctx context.Context, req EvaluationRequest) (*Froze
 	}
 	jsonBytes := req.Delta.JSON()
 	digest := req.Delta.Digest()
-	if compare.DigestJSON(jsonBytes) != digest {
+	if compare.DigestBehavioralDeltaJSON(jsonBytes) != digest {
 		return nil, errCode(CodeInvalidDelta, "input", "", "", "digest", "behavioral delta digest mismatch", nil)
 	}
 	return e.evaluateDeltaDocument(ctx, req.Profile, req.Delta.Document(), jsonBytes, digest)

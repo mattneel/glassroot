@@ -1098,13 +1098,17 @@ Acceptance criteria:
 
 Acceptance criteria:
 
+- requires explicit bundle, bare Git store, exact base/head commits,
+  evaluated-at time, and manifest-integrity mode;
 - opens evidence only through the strict GR-8B verifier;
 - makes expected-manifest-digest and trusted Git-source inputs explicit;
 - never falls back to a working tree or unverified report input;
-- deterministically reconstructs the supported normalization, comparison,
-  policy, waiver, and report stages;
-- uses only GR-11A renderers;
-- exposes stable output and exit-code behavior;
+- deterministically reconstructs the verified plan from trusted-base
+  configuration and exact immutable revisions;
+- executes the complete normalization, comparison, policy, waiver, and report
+  stages;
+- uses only GR-11A JSON, Markdown, and terminal renderers;
+- exposes stable exit codes 0, 2, 3, 4, and 5;
 - never executes bundle or target content.
 
 ### GR-12: End-to-end fake-runner demo

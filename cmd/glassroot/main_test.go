@@ -3,10 +3,13 @@ package main
 import (
 	"bytes"
 	"errors"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/mattneel/glassroot/internal/model"
 )
 
 func TestVersionCommandPrintsBuildMetadata(t *testing.T) {
@@ -110,5 +113,71 @@ func TestValidateDefaultPath(t *testing.T) {
 	code := run([]string{"validate"}, &stdout, &stderr)
 	if code != 0 || stdout.String() != "valid: .glassroot/pipeline.yaml\n" || stderr.Len() != 0 {
 		t.Fatalf("exit=%d stdout=%q stderr=%q", code, stdout.String(), stderr.String())
+	}
+}
+
+func TestInspectHelpAndUsage(t *testing.T) {
+	t.Run("help", func(t *testing.T) {
+		var stdout, stderr bytes.Buffer
+		code := run([]string{"inspect", "--help"}, &stdout, &stderr)
+		if code != 0 || stderr.Len() != 0 || !strings.Contains(stdout.String(), "usage: glassroot inspect") {
+			t.Fatalf("exit=%d stdout=%q stderr=%q", code, stdout.String(), stderr.String())
+		}
+	})
+	t.Run("missing integrity mode", func(t *testing.T) {
+		var stdout, stderr bytes.Buffer
+		code := run([]string{"inspect", "--git-dir", "/tmp/repo.git", "--base-commit", strings.Repeat("1", 40), "--head-commit", strings.Repeat("2", 40), "--evaluated-at", "2026-06-23T00:00:00Z", "/tmp/bundle"}, &stdout, &stderr)
+		if code != 2 || stdout.Len() != 0 || !strings.Contains(stderr.String(), "integrity-mode-required") || !strings.Contains(stderr.String(), "usage: glassroot inspect") {
+			t.Fatalf("exit=%d stdout=%q stderr=%q", code, stdout.String(), stderr.String())
+		}
+	})
+	t.Run("duplicate sensitive flag", func(t *testing.T) {
+		var stdout, stderr bytes.Buffer
+		code := run([]string{"inspect", "--git-dir", "/tmp/repo.git", "--git-dir", "/tmp/other.git", "--base-commit", strings.Repeat("1", 40), "--head-commit", strings.Repeat("2", 40), "--evaluated-at", "2026-06-23T00:00:00Z", "--allow-internal-consistency-only", "/tmp/bundle"}, &stdout, &stderr)
+		if code != 2 || stdout.Len() != 0 || !strings.Contains(stderr.String(), "duplicate flag") {
+			t.Fatalf("exit=%d stdout=%q stderr=%q", code, stdout.String(), stderr.String())
+		}
+	})
+	t.Run("malformed digest", func(t *testing.T) {
+		var stdout, stderr bytes.Buffer
+		code := run([]string{"inspect", "--git-dir", "/tmp/repo.git", "--base-commit", strings.Repeat("1", 40), "--head-commit", strings.Repeat("2", 40), "--evaluated-at", "2026-06-23T00:00:00Z", "--expected-manifest-digest", "sha256:" + strings.Repeat("A", 64), "/tmp/bundle"}, &stdout, &stderr)
+		if code != 2 || stdout.Len() != 0 || !strings.Contains(stderr.String(), "invalid-manifest-digest") {
+			t.Fatalf("exit=%d stdout=%q stderr=%q", code, stdout.String(), stderr.String())
+		}
+	})
+}
+
+type shortWriter struct{ limit int }
+
+func (w *shortWriter) Write(p []byte) (int, error) {
+	if len(p) > w.limit {
+		return w.limit, nil
+	}
+	return len(p), nil
+}
+
+func TestWriteAllDetectsShortWrites(t *testing.T) {
+	err := writeAll(&shortWriter{limit: 1}, []byte("abc"))
+	if !errors.Is(err, io.ErrShortWrite) {
+		t.Fatalf("writeAll err = %v, want short write", err)
+	}
+}
+
+func TestInspectDispositionExitCodeMapping(t *testing.T) {
+	for _, tc := range []struct {
+		disposition model.Disposition
+		want        int
+	}{
+		{model.DispositionPassed, 0},
+		{model.DispositionRequiresReview, 4},
+		{model.DispositionFailed, 5},
+	} {
+		got, err := inspectDispositionExitCode(tc.disposition)
+		if err != nil || got != tc.want {
+			t.Fatalf("inspectDispositionExitCode(%s) = %d, %v; want %d", tc.disposition, got, err, tc.want)
+		}
+	}
+	if _, err := inspectDispositionExitCode(model.Disposition("unknown")); err == nil {
+		t.Fatalf("unknown disposition succeeded")
 	}
 }

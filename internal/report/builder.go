@@ -136,13 +136,13 @@ func validateBinding(manifest evidence.Manifest, bundleManifestDigest model.Dige
 	if delta.SchemaVersion != model.SchemaVersionBehavioralDeltaV1Alpha1 || delta.ComparisonProfile.Version != compare.ComparisonProfileVersionV1Alpha1 || delta.NormalizationProfileVersion != "glassroot.dev/normalization-profile/v1alpha1" {
 		return errCode(CodeInvalidDelta, "binding", "delta", "invalid or unsupported delta", nil)
 	}
-	if compare.DigestJSON(deltaJSON) != deltaDigest || app.BehavioralDeltaDigest != deltaDigest {
+	if compare.DigestBehavioralDeltaJSON(deltaJSON) != deltaDigest || app.BehavioralDeltaDigest != deltaDigest {
 		return errCode(CodeDeltaDigestMismatch, "binding", "deltaDigest", "delta digest mismatch", nil)
 	}
 	if app.SchemaVersion != policy.SchemaVersionPolicyApplicationV1Alpha1 || app.PolicyProfileName != policy.PolicyProfileNameStrict || app.PolicyProfileVersion != policy.PolicyProfileVersionStrictV1Alpha1 || app.BuiltinRuleSetVersion != policy.BuiltinRuleSetVersionStrictV1Alpha1 || app.GovernanceRuleSetVersion != policy.GovernanceRuleSetVersionStrictV1Alpha1 {
 		return errCode(CodeInvalidApplication, "binding", "application", "invalid or unsupported application", nil)
 	}
-	if policy.DigestApplicationJSON(appJSON) != appDigest {
+	if policy.DigestPolicyApplicationJSON(appJSON) != appDigest {
 		return errCode(CodeApplicationDigestMismatch, "binding", "applicationDigest", "application digest mismatch", nil)
 	}
 	if !validDigest(app.BasePolicyEvaluationDigest) || !validDigest(appDigest) || !validDigest(deltaDigest) {

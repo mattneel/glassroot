@@ -46,7 +46,7 @@ func (a *Applier) Apply(ctx context.Context, req ApplicationRequest) (*FrozenApp
 	}
 	evalDoc := req.Evaluation.Document()
 	planJSON := req.Plan.JSON()
-	if pipeline.DigestJSON(planJSON) != req.Plan.Digest() {
+	if pipeline.DigestRunPlanJSON(planJSON) != req.Plan.Digest() {
 		return nil, errCode(CodeInvalidPlan, "application", "", "", "digest", "run plan digest mismatch", nil)
 	}
 	planDoc := req.Plan.Document()

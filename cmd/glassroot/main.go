@@ -1,12 +1,16 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
 	"os"
 
 	"github.com/mattneel/glassroot/internal/config"
+	"github.com/mattneel/glassroot/internal/inspect"
+	"github.com/mattneel/glassroot/internal/model"
+	"github.com/mattneel/glassroot/internal/report"
 )
 
 var (
@@ -22,6 +26,10 @@ func main() {
 }
 
 func run(args []string, stdout, stderr io.Writer) int {
+	return runWithContext(context.Background(), args, stdout, stderr)
+}
+
+func runWithContext(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 	if len(args) == 1 && args[0] == "version" {
 		printVersion(stdout)
 		return 0
@@ -29,9 +37,110 @@ func run(args []string, stdout, stderr io.Writer) int {
 	if len(args) >= 1 && args[0] == "validate" {
 		return runValidate(args[1:], stdout, stderr)
 	}
+	if len(args) >= 1 && args[0] == "inspect" {
+		return runInspect(ctx, args[1:], stdout, stderr)
+	}
 
 	printUsage(stderr)
 	return 2
+}
+
+func runInspect(ctx context.Context, args []string, stdout, stderr io.Writer) int {
+	parsed, err := inspect.ParseCLIArguments(args)
+	if err != nil {
+		writeInspectDiagnostic(stderr, err, true)
+		return 2
+	}
+	if parsed.Help {
+		printInspectUsage(stdout)
+		return 0
+	}
+	inspector, err := inspect.New(inspect.DefaultLimits())
+	if err != nil {
+		writeInspectDiagnostic(stderr, err, false)
+		return 3
+	}
+	result, err := inspector.Inspect(ctx, parsed.Request)
+	if err != nil {
+		writeInspectDiagnostic(stderr, err, false)
+		if inspect.IsUsageError(err) {
+			return 2
+		}
+		return 3
+	}
+	exitCode, err := inspectDispositionExitCode(result.OverallDisposition)
+	if err != nil {
+		writeInspectDiagnostic(stderr, err, false)
+		return 3
+	}
+	out, err := renderInspectOutput(ctx, result, parsed.Format)
+	if err != nil {
+		writeInspectDiagnostic(stderr, err, false)
+		return 3
+	}
+	if err := writeAll(stdout, out); err != nil {
+		writeInspectDiagnostic(stderr, &inspect.Error{Code: inspect.CodeOutputFailed, Stage: "output", Message: "stdout write failed", Err: err}, false)
+		return 3
+	}
+	return exitCode
+}
+
+func inspectDispositionExitCode(disposition model.Disposition) (int, error) {
+	switch disposition {
+	case model.DispositionPassed:
+		return 0, nil
+	case model.DispositionRequiresReview:
+		return 4, nil
+	case model.DispositionFailed:
+		return 5, nil
+	default:
+		return 3, &inspect.Error{Code: inspect.CodeRenderFailed, Stage: "output", Message: "unknown effective disposition"}
+	}
+}
+
+func renderInspectOutput(ctx context.Context, result *inspect.Result, format string) ([]byte, error) {
+	if result == nil || result.Report == nil {
+		return nil, &inspect.Error{Code: inspect.CodeRenderFailed, Stage: "render", Message: "missing report"}
+	}
+	switch format {
+	case "terminal":
+		out, err := report.RenderTerminal(ctx, result.Report, report.DefaultRenderLimits())
+		if err != nil {
+			return nil, &inspect.Error{Code: inspect.CodeRenderFailed, Stage: "render", Message: "terminal rendering failed", Err: err}
+		}
+		return append([]byte(nil), out.Bytes...), nil
+	case "markdown":
+		out, err := report.RenderMarkdown(ctx, result.Report, report.DefaultRenderLimits())
+		if err != nil {
+			return nil, &inspect.Error{Code: inspect.CodeRenderFailed, Stage: "render", Message: "markdown rendering failed", Err: err}
+		}
+		return append([]byte(nil), out.Bytes...), nil
+	case "json":
+		return result.Report.JSON(), nil
+	default:
+		return nil, &inspect.Error{Code: inspect.CodeInvalidRequest, Stage: "render", Message: "invalid output format", Usage: true}
+	}
+}
+
+func writeAll(w io.Writer, data []byte) error {
+	if len(data) == 0 {
+		return nil
+	}
+	n, err := w.Write(data)
+	if err != nil {
+		return err
+	}
+	if n != len(data) {
+		return io.ErrShortWrite
+	}
+	return nil
+}
+
+func writeInspectDiagnostic(w io.Writer, err error, includeUsage bool) {
+	_, _ = fmt.Fprintf(w, "glassroot inspect: %s\n", inspect.Diagnostic(err))
+	if includeUsage {
+		printInspectUsage(w)
+	}
 }
 
 func runValidate(args []string, stdout, stderr io.Writer) int {
@@ -75,6 +184,22 @@ func printVersion(w io.Writer) {
 func printUsage(w io.Writer) {
 	fmt.Fprintln(w, "usage: glassroot version")
 	fmt.Fprintln(w, "       glassroot validate [--file PATH]")
+	fmt.Fprintln(w, "       glassroot inspect [flags] <absolute-evidence-directory>")
+}
+
+func printInspectUsage(w io.Writer) {
+	fmt.Fprintln(w, "usage: glassroot inspect [flags] <absolute-evidence-directory>")
+	fmt.Fprintln(w, "")
+	fmt.Fprintln(w, "required flags:")
+	fmt.Fprintln(w, "  --git-dir ABSOLUTE_PATH")
+	fmt.Fprintln(w, "  --base-commit FULL_OBJECT_ID")
+	fmt.Fprintln(w, "  --head-commit FULL_OBJECT_ID")
+	fmt.Fprintln(w, "  --evaluated-at YYYY-MM-DDTHH:MM:SSZ")
+	fmt.Fprintln(w, "  exactly one of:")
+	fmt.Fprintln(w, "    --expected-manifest-digest sha256:<64-lowercase-hex>")
+	fmt.Fprintln(w, "    --allow-internal-consistency-only")
+	fmt.Fprintln(w, "optional flags:")
+	fmt.Fprintln(w, "  --format terminal|markdown|json   default: terminal")
 }
 
 func writeDiagnostics(w io.Writer, file string, err error) {

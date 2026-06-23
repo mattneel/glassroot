@@ -70,7 +70,9 @@ func sortedStrings(in []string) []string {
 	return out
 }
 
-// DigestApplicationJSON returns the GR-10B policy-application JSON digest for
-// already frozen application bytes. It is a pure downstream binding helper; it
-// does not parse, trust, or repair arbitrary application documents.
-func DigestApplicationJSON(data []byte) model.Digest { return digestBytes(applicationJSONDomain, data) }
+// DigestPolicyApplicationJSON returns the GR-10B policy-application JSON digest
+// for already frozen application bytes. It is format-specific and does not
+// parse, trust, or repair arbitrary JSON documents.
+func DigestPolicyApplicationJSON(data []byte) model.Digest {
+	return digestBytes(applicationJSONDomain, data)
+}
