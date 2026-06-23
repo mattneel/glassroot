@@ -994,16 +994,32 @@ Acceptance criteria:
 - base/head fake runs share no mutable state;
 - no host-shell or host-process runner is introduced.
 
-### GR-8: Evidence bundle writer/reader
+### GR-8A: Versioned evidence bundle writer
 
 Acceptance criteria:
 
-- atomic bundle creation;
-- content-addressed manifest entries;
-- bounded logs/events/artifacts;
-- explicit truncation markers;
-- path-safe extraction/read APIs;
-- corrupt bundle tests.
+- defines a versioned directory bundle format;
+- preserves exact frozen-plan bytes;
+- persists actual runner facts outside the plan;
+- writes bounded JSONL events, logs, results, and content-addressed artifacts;
+- every payload receives a SHA-256 digest and size;
+- truncation, omission, and incompleteness are explicit;
+- publishing is atomic from a fresh private staging directory;
+- partial output is removed after failure;
+- no target content executes.
+
+### GR-8B: Strict evidence bundle reader and verifier
+
+Acceptance criteria:
+
+- opens an existing bundle as hostile data;
+- rejects symlinks, hard links, special files, unsafe paths, undeclared files,
+  and unsupported layout;
+- strictly parses versioned JSON and JSONL with duplicate-member rejection;
+- verifies every size, digest, sequence, reference, and manifest invariant;
+- exposes bounded path-safe read and streaming APIs;
+- corrupt and race-oriented tests fail closed;
+- reading or inspecting a bundle executes nothing.
 
 ### GR-9: Comparator and normalizer
 

@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/mattneel/glassroot/internal/model"
+	"github.com/mattneel/glassroot/internal/pipeline"
 )
 
 func expandAttempts(doc model.RunPlan, planDigest model.Digest) ([]AttemptRequest, error) {
@@ -104,4 +105,22 @@ func ValidatePlanDocumentForTest(doc model.RunPlan) error { return validatePlanD
 
 func isZeroRunnerCapabilities(c model.RunnerCapabilities) bool {
 	return c == (model.RunnerCapabilities{})
+}
+
+// ExpandPlanAttempts returns the deterministic attempt inventory for a frozen
+// plan without executing it. The returned requests are owned copies. Evidence
+// writers use this to route events without reconstructing execution semantics.
+func ExpandPlanAttempts(plan *pipeline.FrozenPlan) ([]AttemptRequest, error) {
+	if plan == nil {
+		return nil, errCode(CodeInvalidPlan, "plan", "", "plan", "FrozenPlan is required", nil)
+	}
+	doc := plan.Document()
+	if err := validatePlanDocument(doc); err != nil {
+		return nil, err
+	}
+	attempts, err := expandAttempts(doc, plan.Digest())
+	if err != nil {
+		return nil, err
+	}
+	return cloneAttemptRequests(attempts), nil
 }

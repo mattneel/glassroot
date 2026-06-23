@@ -1,7 +1,7 @@
 GO ?= go
 GOFMT ?= gofmt
 
-.PHONY: fmt fmt-check vet lint test test-race test-integration schema-check test-fuzz-seeds test-gitstore test-gitstore-fuzz-seeds test-materialize test-materialize-fuzz-seeds test-pipeline test-pipeline-fuzz-seeds test-runner test-runner-fuzz-seeds build generate verify
+.PHONY: fmt fmt-check vet lint test test-race test-integration schema-check test-fuzz-seeds test-gitstore test-gitstore-fuzz-seeds test-materialize test-materialize-fuzz-seeds test-pipeline test-pipeline-fuzz-seeds test-runner test-runner-fuzz-seeds test-evidence test-evidence-fuzz-seeds build generate verify
 
 fmt:
 	$(GOFMT) -w .
@@ -32,6 +32,7 @@ test-fuzz-seeds:
 	$(GO) test ./internal/materialize -run 'FuzzValidateMaterializationInventory|FuzzValidateSymlinkTarget|FuzzParseLFSPointer|FuzzMaterializationDigestEncoding' -count=1
 	$(GO) test ./internal/pipeline -run 'FuzzValidateSourceSnapshot|FuzzBuildFrozenPlan|FuzzPlannerIdentifiersAndDigests' -count=1
 	$(GO) test ./internal/runner/... -run 'FuzzValidateRunnerCapabilities|FuzzValidateEventDraft|FuzzFakeProgramAttemptKeys' -count=1
+	$(GO) test ./internal/evidence -run 'FuzzValidateEvidenceEntryPath|FuzzEncodeEventLine|FuzzValidateLogicalArtifactPath|FuzzNormalizeManifest' -count=1
 
 test-gitstore:
 	$(GO) test ./internal/gitstore -count=1
@@ -56,6 +57,12 @@ test-runner:
 
 test-runner-fuzz-seeds:
 	$(GO) test ./internal/runner/... -run 'FuzzValidateRunnerCapabilities|FuzzValidateEventDraft|FuzzFakeProgramAttemptKeys' -count=1
+
+test-evidence:
+	$(GO) test ./internal/evidence -count=1
+
+test-evidence-fuzz-seeds:
+	$(GO) test ./internal/evidence -run 'FuzzValidateEvidenceEntryPath|FuzzEncodeEventLine|FuzzValidateLogicalArtifactPath|FuzzNormalizeManifest' -count=1
 
 build:
 	@tmp="$$(mktemp -t glassroot.XXXXXX)"; \

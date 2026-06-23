@@ -36,12 +36,15 @@ The initial top-level schema versions are:
 - `glassroot.dev/run-plan/v1alpha1`
 - `glassroot.dev/observation-event/v1alpha1`
 - `glassroot.dev/scenario-result/v1alpha1`
+- `glassroot.dev/execution-result/v1alpha1`
+- `glassroot.dev/attempt-result/v1alpha1`
+- `glassroot.dev/artifact-index/v1alpha1`
 - `glassroot.dev/behavioral-delta/v1alpha1`
 - `glassroot.dev/evidence-manifest/v1alpha1`
 - `glassroot.dev/finding/v1alpha1`
 - `glassroot.dev/report/v1alpha1`
 
-Nested value objects inherit the enclosing document version and do not repeat `schemaVersion` unless they are intentionally designed to be serialized independently. For example, `EvidenceRef`, `RunnerCapabilities`, `ResourceLimits`, and observation payloads inherit their parent document version. `ScenarioResult` and `Finding` include `schemaVersion` because they are independently serialized wire documents even when a later report embeds them.
+Nested value objects inherit the enclosing document version and do not repeat `schemaVersion` unless they are intentionally designed to be serialized independently. For example, `EvidenceRef`, `RunnerCapabilities`, `ResourceLimits`, and observation payloads inherit their parent document version. `ScenarioResult`, `ExecutionResult`, `AttemptResult`, `ArtifactIndex`, and `Finding` include `schemaVersion` because they are independently serialized wire documents even when a later report embeds them.
 
 The model uses explicit integer wire units such as `timeoutMillis`, `durationMillis`, `memoryBytes`, `diskBytes`, `sizeBytes`, `cpuMillis`, and `processCount`. It uses `time.Time` for timestamps and pointers for optional timestamps. Optional exit codes use `*int` so an unobserved exit code remains distinguishable from observed exit code zero.
 

@@ -180,6 +180,9 @@ func TestSchemaVersionAndEnumWireValues(t *testing.T) {
 		{"scenario-result", SchemaVersionScenarioResultV1Alpha1, "glassroot.dev/scenario-result/v1alpha1"},
 		{"behavioral-delta", SchemaVersionBehavioralDeltaV1Alpha1, "glassroot.dev/behavioral-delta/v1alpha1"},
 		{"evidence-manifest", SchemaVersionEvidenceManifestV1Alpha1, "glassroot.dev/evidence-manifest/v1alpha1"},
+		{"execution-result", SchemaVersionExecutionResultV1Alpha1, "glassroot.dev/execution-result/v1alpha1"},
+		{"attempt-result", SchemaVersionAttemptResultV1Alpha1, "glassroot.dev/attempt-result/v1alpha1"},
+		{"artifact-index", SchemaVersionArtifactIndexV1Alpha1, "glassroot.dev/artifact-index/v1alpha1"},
 		{"finding", SchemaVersionFindingV1Alpha1, "glassroot.dev/finding/v1alpha1"},
 		{"report", SchemaVersionReportV1Alpha1, "glassroot.dev/report/v1alpha1"},
 	}

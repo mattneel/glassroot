@@ -12,6 +12,9 @@ const (
 	SchemaVersionScenarioResultV1Alpha1   SchemaVersion = "glassroot.dev/scenario-result/v1alpha1"
 	SchemaVersionBehavioralDeltaV1Alpha1  SchemaVersion = "glassroot.dev/behavioral-delta/v1alpha1"
 	SchemaVersionEvidenceManifestV1Alpha1 SchemaVersion = "glassroot.dev/evidence-manifest/v1alpha1"
+	SchemaVersionExecutionResultV1Alpha1  SchemaVersion = "glassroot.dev/execution-result/v1alpha1"
+	SchemaVersionAttemptResultV1Alpha1    SchemaVersion = "glassroot.dev/attempt-result/v1alpha1"
+	SchemaVersionArtifactIndexV1Alpha1    SchemaVersion = "glassroot.dev/artifact-index/v1alpha1"
 	SchemaVersionFindingV1Alpha1          SchemaVersion = "glassroot.dev/finding/v1alpha1"
 	SchemaVersionReportV1Alpha1           SchemaVersion = "glassroot.dev/report/v1alpha1"
 )
