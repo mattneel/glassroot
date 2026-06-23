@@ -1,7 +1,7 @@
 GO ?= go
 GOFMT ?= gofmt
 
-.PHONY: fmt fmt-check vet lint test test-race test-integration schema-check test-fuzz-seeds test-gitstore test-gitstore-fuzz-seeds build generate verify
+.PHONY: fmt fmt-check vet lint test test-race test-integration schema-check test-fuzz-seeds test-gitstore test-gitstore-fuzz-seeds test-materialize test-materialize-fuzz-seeds build generate verify
 
 fmt:
 	$(GOFMT) -w .
@@ -29,12 +29,19 @@ schema-check:
 test-fuzz-seeds:
 	$(GO) test ./internal/config -run FuzzParseAndValidate -count=1
 	$(GO) test ./internal/gitstore -run 'FuzzParseLsTree|FuzzParseCatFileHeader|FuzzValidateGitTreePath' -count=1
+	$(GO) test ./internal/materialize -run 'FuzzValidateMaterializationInventory|FuzzValidateSymlinkTarget|FuzzParseLFSPointer|FuzzMaterializationDigestEncoding' -count=1
 
 test-gitstore:
 	$(GO) test ./internal/gitstore -count=1
 
 test-gitstore-fuzz-seeds:
 	$(GO) test ./internal/gitstore -run 'FuzzParseLsTree|FuzzParseCatFileHeader|FuzzValidateGitTreePath' -count=1
+
+test-materialize:
+	$(GO) test ./internal/materialize -count=1
+
+test-materialize-fuzz-seeds:
+	$(GO) test ./internal/materialize -run 'FuzzValidateMaterializationInventory|FuzzValidateSymlinkTarget|FuzzParseLFSPointer|FuzzMaterializationDigestEncoding' -count=1
 
 build:
 	@tmp="$$(mktemp -t glassroot.XXXXXX)"; \

@@ -59,3 +59,17 @@ Arbitrary attacker-provided `.git` directories are unsupported. Concurrent objec
 Git subprocesses in this component run with a fixed command inventory, an absolute Git executable, bounded stdout and stderr, and a sanitized environment. The component grants Git no network permission by command policy: it does not clone, fetch, invoke remote helpers, use credentials, or perform lazy fetches. Hooks, filters, text conversion, Git LFS, archive attributes, and submodule traversal are not invoked. Tracked Git LFS pointer files are raw blob contents; gitlinks are reported as gitlink entries and not traversed.
 
 Raw Git object parsing and Git subprocess behavior remain attack surfaces. GR-6B is responsible for traversal-resistant filesystem writes and host-platform materialization checks. GR-6A does not create a target workspace, run a workload, add a runner, or provide a sandbox.
+
+## Materialization trust boundary
+
+GR-6B writes one already-resolved Git tree into a fresh private workspace. The source revision is an immutable commit/tree identity from the trusted Git object reader; symbolic refs are not resolved again during materialization.
+
+Git tree paths, blob bytes, symlink targets, modes, declared sizes, Gitlinks, and LFS pointer files remain hostile. The destination parent is trusted control-plane state. It must not be writable or replaceable by the analyzed workload, must not contain attacker-controlled mounts or device nodes, and must not be located under the source bare Git store.
+
+Materialization happens before any target workload starts. Every repository-selected path is validated as a relative POSIX path and passed through one `os.Root`; repository content is never appended to an absolute host path. `os.Root` is a traversal-resistant filesystem API, not a sandbox. It does not protect against a malicious kernel, compromised materializer user, attacker-controlled mount namespace, hostile backing filesystem, or same-UID process racing the generated workspace.
+
+The workspace is newly created with mode `0700`. The materializer preflights the complete tree before writing, creates directories first, creates files with `O_EXCL`, normalizes file modes through open file descriptors, and creates validated symlinks last. No repository-derived filesystem operation occurs after symlink creation begins.
+
+Gitlinks are reported and omitted. Git LFS objects are not fetched; pointer files are materialized as their raw tracked blob bytes and may be annotated as pointers. Hooks, filters, text conversion, archive extraction, checkout, submodule initialization, network access, and target-code execution are not part of GR-6B.
+
+Partial output is destroyed on failure. A successful workspace still contains untrusted source data and must not be executed directly on the host. Future sandbox runners are responsible for executing workloads inside an explicit isolation boundary and must not treat configuration trust or materialization as sufficient isolation.

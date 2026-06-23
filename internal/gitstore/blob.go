@@ -4,9 +4,16 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"io/fs"
 	"strconv"
 )
+
+type BlobMetadata struct {
+	ObjectID      string
+	SizeBytes     int64
+	ContentDigest string
+}
 
 type File struct {
 	Path          string
@@ -23,6 +30,32 @@ type catFileHeader struct {
 	Type        string
 	Size        int64
 	HeaderBytes int
+}
+
+// CopyBlob copies an exact raw blob object into dst with the same bounded
+// cat-file verification used by ReadPath. The objectID must already be an
+// immutable blob object ID from a validated tree inventory; refs and revision
+// expressions are not accepted. The destination writer is caller-owned and no
+// filesystem path is opened by gitstore.
+func (r *Repository) CopyBlob(ctx context.Context, objectID string, expectedSize int64, maxBytes int64, dst io.Writer) (BlobMetadata, error) {
+	if dst == nil {
+		return BlobMetadata{}, gitErr(CodeGitCommandFailed, "blob", "copy", "destination writer is nil", nil)
+	}
+	if expectedSize < 0 {
+		return BlobMetadata{}, gitErr(CodeBlobSizeMismatch, "blob", "copy", "negative expected size", nil)
+	}
+	data, err := r.readBlob(ctx, objectID, expectedSize, true, maxBytes)
+	if err != nil {
+		return BlobMetadata{}, err
+	}
+	written, err := io.Copy(dst, bytes.NewReader(data))
+	if err != nil {
+		return BlobMetadata{}, gitErr(CodeGitCommandFailed, "blob", "copy", "write destination", err)
+	}
+	if written != int64(len(data)) {
+		return BlobMetadata{}, gitErr(CodeBlobSizeMismatch, "blob", "copy", "destination accepted a short write", nil)
+	}
+	return BlobMetadata{ObjectID: objectID, SizeBytes: int64(len(data)), ContentDigest: contentDigest(data)}, nil
 }
 
 func (r *Repository) ReadPath(ctx context.Context, revision ResolvedRevision, requestedPath string, maxBytes int64) (File, error) {
